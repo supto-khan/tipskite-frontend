@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/useAuth'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Input } from '@/app/components/ui/input'
+import { Mail, Lock, Sparkles, ArrowRight } from 'lucide-react'
 
 function LoginForm() {
     const searchParams = useSearchParams()
@@ -31,67 +32,130 @@ function LoginForm() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
-                        Sign in to your account
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-text-secondary">
-                        Or{' '}
-                        <Link href="/signup" className="font-medium text-primary-600 hover:text-primary-500">
-                            start your page for free
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 lg:p-8 font-sans">
+            <div className="max-w-4xl w-full bg-surface border border-border rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-12">
+                
+                {/* Left Brand Feature Banner (Desktop) */}
+                <div className="md:col-span-5 bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-900 p-8 text-white flex flex-col justify-between relative overflow-hidden">
+                    {/* Background Subtle Glowing Circles */}
+                    <div className="absolute -top-16 -left-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-accent/20 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="relative z-10 space-y-6">
+                        <Link href="/" className="inline-flex items-center space-x-2">
+                            <div className="w-10 h-10 rounded-2xl bg-white text-primary-600 flex items-center justify-center font-black text-xl shadow-lg">
+                                T
+                            </div>
+                            <span className="font-extrabold text-xl tracking-tight text-white">
+                                Tips<span className="text-accent font-black">Kite</span>
+                            </span>
                         </Link>
-                    </p>
+
+                        <div className="space-y-3 pt-4">
+                            <h2 className="text-2xl sm:text-3xl font-black leading-tight">
+                                Welcome back to your creator hub.
+                            </h2>
+                            <p className="text-sm text-white/80 font-medium leading-relaxed">
+                                Manage your tips, payouts, digital shop, and memberships in one central dashboard.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Features List */}
+                    <div className="relative z-10 space-y-3 my-8 border-t border-white/15 pt-6">
+                        <div className="flex items-start space-x-3 text-xs font-semibold text-white/90">
+                            <Sparkles className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                            <span>Track real-time earnings & analytics</span>
+                        </div>
+                        <div className="flex items-start space-x-3 text-xs font-semibold text-white/90">
+                            <Sparkles className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                            <span>Manage digital products & 1-on-1 bookings</span>
+                        </div>
+                    </div>
+
+                    {/* Footer Badge */}
+                    <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-xs border border-white/15 text-xs text-white/90">
+                        <p className="italic">"Empowering creators across Bangladesh to thrive."</p>
+                    </div>
                 </div>
 
-                {isExpired && (
-                    <div className="p-4 bg-warning-50 border border-warning-200 text-warning-800 text-xs font-semibold rounded-xl text-center shadow-sm">
-                        Your session has expired due to inactivity. Please sign in again to continue.
+                {/* Right Login Form Column */}
+                <div className="md:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-center space-y-6 bg-surface">
+                    
+                    <div className="space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+                            Sign in to your account
+                        </h1>
+                        <p className="text-xs sm:text-sm text-text-muted font-medium">
+                            Don't have a creator page yet?{' '}
+                            <Link href="/signup" className="font-bold text-primary-600 hover:text-primary-700 transition-colors underline decoration-primary-200 underline-offset-2">
+                                Start for free
+                            </Link>
+                        </p>
                     </div>
-                )}
-                {status && <div className="mb-4 font-medium text-sm text-success-600">{status}</div>}
-                <form className="mt-8 space-y-6" onSubmit={submitForm}>
-                    <div className="rounded-md shadow-sm -space-y-px">
+
+                    {isExpired && (
+                        <div className="p-4 bg-warning-50 border border-warning-200 text-warning-800 text-xs font-semibold rounded-2xl text-center shadow-xs">
+                            Your session has expired due to inactivity. Please sign in again.
+                        </div>
+                    )}
+
+                    {status && (
+                        <div className="p-3.5 rounded-2xl bg-success-50 border border-success-200 text-success-700 text-xs font-bold text-center">
+                            {status}
+                        </div>
+                    )}
+
+                    {errors.general && (
+                        <div className="p-3.5 rounded-2xl bg-error-50 border border-error-200 text-error-700 text-xs font-semibold leading-relaxed">
+                            {errors.general}
+                        </div>
+                    )}
+
+                    <form onSubmit={submitForm} className="space-y-4">
                         <div>
-                            <label htmlFor="email-address" className="sr-only">Email address</label>
-                            <input
-                                id="email-address"
+                            <Input
+                                id="email"
                                 name="email"
                                 type="email"
+                                label="Email Address"
+                                placeholder="you@example.com"
                                 autoComplete="email"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border placeholder-gray-500 text-text-primary rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                                placeholder="Email address"
                                 value={email}
-                                onChange={e => setEmail(e.target.value)}
+                                onChange={(e) => setEmail(e.target.value)}
+                                leftIcon={<Mail className="h-4 w-4" />}
+                                error={errors.email?.[0]}
                             />
-                            {errors.email && <p className="text-error-500 text-xs italic">{errors.email[0]}</p>}
                         </div>
+
                         <div>
                             <Input
                                 id="password"
                                 name="password"
                                 type="password"
+                                label="Password"
+                                placeholder="Enter your password"
                                 autoComplete="current-password"
                                 required
-                                placeholder="Password"
                                 value={password}
-                                onChange={e => setPassword(e.target.value)}
+                                onChange={(e) => setPassword(e.target.value)}
+                                leftIcon={<Lock className="h-4 w-4" />}
+                                error={errors.password?.[0]}
                             />
-                            {errors.password && <p className="text-error-500 text-xs italic mt-1">{errors.password[0]}</p>}
                         </div>
-                    </div>
 
-                    <div>
-                        <button
-                            type="submit"
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                        >
-                            Sign in
-                        </button>
-                    </div>
-                </form>
+                        <div className="pt-2">
+                            <button
+                                type="submit"
+                                className="w-full py-3.5 px-6 rounded-2xl bg-primary-600 hover:bg-primary-700 active:scale-[0.99] text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                            >
+                                <span>Sign In</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     )
