@@ -1,9 +1,31 @@
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from './axios'
-import { storeToken, removeToken } from './token'
+import { storeToken, removeToken, getStoredToken } from './token'
 
 export function useAuth({ middleware, redirectIfAuthenticated }: { middleware?: 'auth' | 'guest', redirectIfAuthenticated?: string } = {}) {
     const router = useRouter()
+
+    useEffect(() => {
+        const token = getStoredToken()
+
+        if (middleware === 'guest' && token) {
+            axios.get('/api/v1/user')
+                .then(res => {
+                    const user = res.data
+                    const target = redirectIfAuthenticated || (user?.creator_profile ? '/dashboard' : '/onboarding')
+                    router.push(target)
+                })
+                .catch(() => {
+                    removeToken()
+                    delete axios.defaults.headers.common['Authorization']
+                })
+        }
+
+        if (middleware === 'auth' && !token) {
+            router.push('/login')
+        }
+    }, [middleware, redirectIfAuthenticated, router])
 
     const register = async ({ setErrors, ...props }: any) => {
         setErrors([])
