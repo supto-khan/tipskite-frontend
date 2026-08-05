@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from '@/lib/axios'
 import { useRouter } from 'next/navigation'
 
@@ -10,6 +10,17 @@ export default function Onboarding() {
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
     const [checking, setChecking] = useState(false)
     const [errors, setErrors] = useState<any>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        axios.get('/api/v1/creator/profile')
+            .then(() => {
+                router.push('/dashboard')
+            })
+            .catch(() => {
+                setLoading(false)
+            })
+    }, [router])
 
     const checkSlug = async (value: string) => {
         setSlug(value)
@@ -45,6 +56,14 @@ export default function Onboarding() {
                 setErrors(error.response.data.error?.fields || error.response.data.errors)
             }
         }
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background text-text-muted">
+                <div className="animate-pulse font-medium text-sm">Checking account status...</div>
+            </div>
+        )
     }
 
     return (

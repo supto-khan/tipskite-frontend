@@ -15,7 +15,9 @@ export function useAuth({ middleware, redirectIfAuthenticated }: { middleware?: 
                     storeToken(res.data.token)
                     axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
                 }
-                router.push(redirectIfAuthenticated || '/onboarding')
+                const user = res.data?.user
+                const target = redirectIfAuthenticated || (user?.creator_profile ? '/dashboard' : '/onboarding')
+                router.push(target)
             })
             .catch(error => {
                 if (error.response?.status !== 422) throw error
@@ -34,7 +36,9 @@ export function useAuth({ middleware, redirectIfAuthenticated }: { middleware?: 
                     storeToken(res.data.token)
                     axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
                 }
-                router.push(redirectIfAuthenticated || '/dashboard')
+                const user = res.data?.user
+                const target = redirectIfAuthenticated || (user?.creator_profile ? '/dashboard' : '/onboarding')
+                router.push(target)
             })
             .catch(error => {
                 if (error.response?.status !== 422 && error.response?.status !== 401) throw error
