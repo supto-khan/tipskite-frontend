@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import axios from '@/lib/axios'
 import {
     User as UserIcon,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react'
 
 export default function DashboardHome() {
+    const router = useRouter()
     const [profile, setProfile] = useState<any>(null)
     const [summary, setSummary] = useState<any>(null)
     const [tiersCount, setTiersCount] = useState(0)
