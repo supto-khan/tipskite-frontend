@@ -50,6 +50,9 @@ export default function DashboardHome() {
                         setGoalTitle(profData.goal_title)
                         setGoalAmount((profData.goal_target_cents / 100).toString())
                     }
+                } else if (profileRes.reason?.response?.status === 404) {
+                    router.push('/onboarding')
+                    return
                 }
 
                 if (summaryRes.status === 'fulfilled') {
