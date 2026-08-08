@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import PublicStorefrontClient from './PublicStorefrontClient'
 
 async function getStorefrontData(slug: string) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
     try {
         const [creatorRes, productsRes] = await Promise.all([
             fetch(`${baseUrl}/api/v1/creators/${slug}`, { next: { revalidate: 10 } }),

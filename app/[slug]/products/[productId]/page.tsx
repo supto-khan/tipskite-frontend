@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import PublicProductDetailClient from './PublicProductDetailClient'
 
 async function getProductDetail(slug: string, productId: string) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
     try {
         const res = await fetch(`${baseUrl}/api/v1/creators/${slug}/products/${productId}`, {
             next: { revalidate: 10 },

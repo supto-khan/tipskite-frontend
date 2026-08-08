@@ -54,7 +54,7 @@ const socialIconMap: Record<string, { label: string; icon: React.ComponentType }
 }
 
 async function getCreatorData(slug: string) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
     try {
         const res = await fetch(`${baseUrl}/api/v1/creators/${slug}`, {
             next: { revalidate: 10 },
