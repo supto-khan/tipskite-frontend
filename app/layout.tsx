@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Lexend } from "next/font/google";
 import "./globals.css";
+import { ExtensionWarningSuppressor } from "@/components/ExtensionWarningSuppressor";
 
 const lexend = Lexend({
   variable: "--font-lexend",
@@ -40,6 +41,59 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  // 1. Suppress all window runtime errors from chrome extensions (e.g. M_ID, executors/200.js)
+                  window.addEventListener('error', function(event) {
+                    var filename = event.filename || '';
+                    var msg = event.message || '';
+                    if (
+                      filename.indexOf('chrome-extension:') !== -1 ||
+                      filename.indexOf('moz-extension:') !== -1 ||
+                      msg.indexOf('M_ID') !== -1 ||
+                      msg.indexOf('bis_skin_checked') !== -1
+                    ) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      event.stopImmediatePropagation();
+                      return true;
+                    }
+                  }, true);
+
+                  window.addEventListener('unhandledrejection', function(event) {
+                    var reason = event.reason ? (event.reason.stack || event.reason.message || '') : '';
+                    if (reason.indexOf('chrome-extension:') !== -1 || reason.indexOf('M_ID') !== -1) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      return true;
+                    }
+                  }, true);
+
+                  // 2. Suppress console warnings & errors about extensions & bis_skin_checked
+                  var origError = console.error;
+                  var origWarn = console.warn;
+                  var shouldSuppress = function(args) {
+                    for (var i = 0; i < args.length; i++) {
+                      var a = args[i];
+                      var str = typeof a === 'string' ? a : (a && typeof a.toString === 'function' ? a.toString() : '');
+                      if (
+                        str.indexOf('bis_skin_checked') !== -1 ||
+                        str.indexOf('M_ID') !== -1 ||
+                        str.indexOf('chrome-extension://') !== -1 ||
+                        str.indexOf('executors/200.js') !== -1
+                      ) return true;
+                    }
+                    return false;
+                  };
+
+                  console.error = function() {
+                    if (shouldSuppress(arguments)) return;
+                    origError.apply(console, arguments);
+                  };
+                  console.warn = function() {
+                    if (shouldSuppress(arguments)) return;
+                    origWarn.apply(console, arguments);
+                  };
+
+                  // 3. Theme initialization
                   var savedTheme = localStorage.getItem('theme');
                   var theme = savedTheme;
                   if (!theme) {
@@ -56,6 +110,7 @@ export default function RootLayout({
             `,
           }}
         />
+        <ExtensionWarningSuppressor />
         {children}
       </body>
     </html>

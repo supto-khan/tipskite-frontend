@@ -25,10 +25,26 @@ export default function ShareModal({ slug, creatorName, isOpen, onClose }: Share
         ? `${window.location.origin}/${slug}`
         : `https://tipskite.com/${slug}`
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(shareUrl)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+    const handleCopy = async () => {
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(shareUrl)
+            } else {
+                const textArea = document.createElement('textarea')
+                textArea.value = shareUrl
+                textArea.style.position = 'fixed'
+                textArea.style.opacity = '0'
+                document.body.appendChild(textArea)
+                textArea.focus()
+                textArea.select()
+                document.execCommand('copy')
+                document.body.removeChild(textArea)
+            }
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        } catch {
+            setCopied(false)
+        }
     }
 
     const modalContent = (
@@ -46,8 +62,8 @@ export default function ShareModal({ slug, creatorName, isOpen, onClose }: Share
                         <Share2 className="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 className="text-base font-extrabold text-text-primary">Share Page</h3>
-                        <p className="text-xs text-text-muted font-medium">Support {creatorName}</p>
+                        <h3 className="text-base font-extrabold text-text-primary">Share</h3>
+                        <p className="text-xs text-text-muted font-medium">{creatorName}</p>
                     </div>
                 </div>
 
@@ -78,20 +94,36 @@ export default function ShareModal({ slug, creatorName, isOpen, onClose }: Share
 
                 <div className="grid grid-cols-2 gap-2 pt-2">
                     <a
-                        href={`https://twitter.com/intent/tweet?text=Support%20${encodeURIComponent(creatorName)}%20on%20TipsKite!&url=${encodeURIComponent(shareUrl)}`}
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2.5 px-4 bg-blue-600/10 text-blue-600 dark:text-blue-400 hover:bg-blue-600/20 font-bold text-xs rounded-xl text-center transition-colors"
+                    >
+                        Facebook
+                    </a>
+                    <a
+                        href={`https://twitter.com/intent/tweet?text=Check%20out%20${encodeURIComponent(creatorName)}%20on%20TipsKite!&url=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="py-2.5 px-4 bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 font-bold text-xs rounded-xl text-center transition-colors"
                     >
-                        Share to Twitter
+                        X / Twitter
                     </a>
                     <a
-                        href={`https://api.whatsapp.com/send?text=Support%20${encodeURIComponent(creatorName)}%20on%20TipsKite:%20${encodeURIComponent(shareUrl)}`}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(creatorName + ': ' + shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="py-2.5 px-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 font-bold text-xs rounded-xl text-center transition-colors"
                     >
-                        Share to WhatsApp
+                        WhatsApp
+                    </a>
+                    <a
+                        href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(creatorName)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2.5 px-4 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20 font-bold text-xs rounded-xl text-center transition-colors"
+                    >
+                        Telegram
                     </a>
                 </div>
             </div>

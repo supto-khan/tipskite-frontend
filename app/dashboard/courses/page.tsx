@@ -155,14 +155,22 @@ export default function CoursesPage() {
             return
         }
 
+        const regPriceNum = parseFloat(regularPrice) || 0
+        const discPriceNum = discountedPrice ? parseFloat(discountedPrice) : null
+
+        if (!isFree && discPriceNum !== null && discPriceNum >= regPriceNum) {
+            setError('Discounted price must be smaller than the regular price.')
+            return
+        }
+
         setSaving(true)
         setError(null)
 
         const payload = {
             title: title.trim(),
             subtitle: subtitle.trim() || null,
-            regular_price: isFree ? 0 : parseFloat(regularPrice) || 0,
-            discounted_price: isFree ? null : (discountedPrice ? parseFloat(discountedPrice) : null),
+            regular_price: isFree ? 0 : regPriceNum,
+            discounted_price: isFree ? null : discPriceNum,
             is_free: isFree,
             cover_image_url: coverImageUrl || null,
             description: description || null,
@@ -409,18 +417,37 @@ export default function CoursesPage() {
 
                                 {/* DISCOUNTED PRICE */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-success-600 tracking-wider uppercase">DISCOUNTED PRICE</label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-success-600 tracking-wider uppercase">DISCOUNTED PRICE</label>
+                                        {parseFloat(regularPrice || '0') > 0 && (
+                                            <span className="text-[10px] font-bold text-text-muted">Must be less than ৳{regularPrice}</span>
+                                        )}
+                                    </div>
                                     <div className="relative flex items-center">
                                         <span className="absolute left-4 text-success-600 text-sm font-bold">৳</span>
                                         <input
                                             type="number"
                                             disabled={isFree}
                                             placeholder="2500"
+                                            min="0"
+                                            max={parseFloat(regularPrice || '0') > 0 ? (parseFloat(regularPrice) - 1).toString() : undefined}
                                             value={discountedPrice}
-                                            onChange={(e) => setDiscountedPrice(e.target.value)}
-                                            className="w-full bg-background border border-success-500 rounded-2xl pl-9 pr-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-success-500 transition-all font-medium disabled:opacity-40"
+                                            onChange={(e) => {
+                                                setDiscountedPrice(e.target.value)
+                                                if (error) setError(null)
+                                            }}
+                                            className={`w-full bg-background border rounded-2xl pl-9 pr-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none transition-all font-medium disabled:opacity-40 ${
+                                                parseFloat(discountedPrice || '0') >= parseFloat(regularPrice || '0')
+                                                    ? 'border-error focus:ring-2 focus:ring-error'
+                                                    : 'border-success-500 focus:ring-2 focus:ring-success-500'
+                                            }`}
                                         />
                                     </div>
+                                    {parseFloat(discountedPrice || '0') >= parseFloat(regularPrice || '0') && (
+                                        <p className="text-[11px] font-bold text-error">
+                                            Discounted price must be smaller than the regular price (৳{regularPrice}).
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

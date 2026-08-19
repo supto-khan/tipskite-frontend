@@ -40,24 +40,81 @@ const TwitterIcon = () => (
     </svg>
 )
 
+const LinkedInIcon = () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+    </svg>
+)
+
+const GithubIcon = () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+    </svg>
+)
+
+const RedditIcon = () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.18 1.207.49 1.207-.869 2.85-1.43 4.674-1.5l.93-4.364 3.32.698a1.25 1.25 0 0 1 1.1 1.174z"/>
+    </svg>
+)
+
 const WebsiteIcon = () => (
     <Globe className="w-4 h-4" />
 )
 
-const socialIconMap: Record<string, { label: string; icon: React.ComponentType }> = {
-    facebook: { label: 'Facebook', icon: FacebookIcon },
-    instagram: { label: 'Instagram', icon: InstagramIcon },
-    youtube: { label: 'YouTube', icon: YoutubeIcon },
-    tiktok: { label: 'TikTok', icon: TiktokIcon },
-    twitter: { label: 'Twitter', icon: TwitterIcon },
-    website: { label: 'Website', icon: WebsiteIcon },
+const socialIconMap: Record<string, { label: string; icon: React.ComponentType; hoverClass: string }> = {
+    facebook: {
+        label: 'Facebook',
+        icon: FacebookIcon,
+        hoverClass: 'hover:border-[#1877F2] hover:text-[#1877F2] hover:bg-[#1877F2]/10',
+    },
+    instagram: {
+        label: 'Instagram',
+        icon: InstagramIcon,
+        hoverClass: 'hover:border-[#E4405F] hover:text-[#E4405F] hover:bg-[#E4405F]/10',
+    },
+    youtube: {
+        label: 'YouTube',
+        icon: YoutubeIcon,
+        hoverClass: 'hover:border-[#FF0000] hover:text-[#FF0000] hover:bg-[#FF0000]/10',
+    },
+    tiktok: {
+        label: 'TikTok',
+        icon: TiktokIcon,
+        hoverClass: 'hover:border-[#EE1D52] hover:text-[#EE1D52] hover:bg-[#EE1D52]/10 dark:hover:border-[#69C9D0] dark:hover:text-[#69C9D0] dark:hover:bg-[#69C9D0]/10',
+    },
+    twitter: {
+        label: 'X (Twitter)',
+        icon: TwitterIcon,
+        hoverClass: 'hover:border-[#1DA1F2] hover:text-[#1DA1F2] hover:bg-[#1DA1F2]/10',
+    },
+    linkedin: {
+        label: 'LinkedIn',
+        icon: LinkedInIcon,
+        hoverClass: 'hover:border-[#0A66C2] hover:text-[#0A66C2] hover:bg-[#0A66C2]/10',
+    },
+    github: {
+        label: 'GitHub',
+        icon: GithubIcon,
+        hoverClass: 'hover:border-black dark:hover:border-white hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10',
+    },
+    reddit: {
+        label: 'Reddit',
+        icon: RedditIcon,
+        hoverClass: 'hover:border-[#FF4500] hover:text-[#FF4500] hover:bg-[#FF4500]/10',
+    },
+    website: {
+        label: 'Website',
+        icon: WebsiteIcon,
+        hoverClass: 'hover:border-primary-500 hover:text-primary-600 hover:bg-primary-50',
+    },
 }
 
 async function getCreatorData(slug: string) {
-    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
     try {
         const res = await fetch(`${baseUrl}/api/v1/creators/${slug}`, {
-            next: { revalidate: 10 },
+            cache: 'no-store',
         })
         if (!res.ok) return null
         return res.json()
@@ -86,7 +143,18 @@ export default async function PublicCreatorPage({ params }: { params: Promise<{ 
     }
 
     const { profile, stats, recent_supporters } = data
-    const socialLinks = profile.social_links && typeof profile.social_links === 'object' ? profile.social_links : {}
+    let socialLinks: Record<string, any> = {}
+    if (profile.social_links) {
+        if (typeof profile.social_links === 'object') {
+            socialLinks = profile.social_links
+        } else if (typeof profile.social_links === 'string') {
+            try {
+                socialLinks = JSON.parse(profile.social_links)
+            } catch (e) {
+                socialLinks = {}
+            }
+        }
+    }
 
     const activeSocialLinks = Object.entries(socialLinks).filter(
         ([key, val]) => typeof val === 'string' && val.trim().length > 0 && socialIconMap[key]
@@ -199,7 +267,7 @@ export default async function PublicCreatorPage({ params }: { params: Promise<{ 
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         title={platform.label}
-                                                        className="w-8 h-8 rounded-full bg-surface border border-border hover:border-primary-500 hover:text-primary-600 text-text-muted transition-all flex items-center justify-center cursor-pointer shadow-xs hover:scale-105"
+                                                        className={`w-8 h-8 rounded-full bg-surface border border-border text-text-muted transition-all flex items-center justify-center cursor-pointer shadow-xs hover:scale-110 ${platform.hoverClass}`}
                                                     >
                                                         <IconComp />
                                                     </a>

@@ -26,6 +26,7 @@ import {
     ShieldCheck,
     Briefcase
 } from 'lucide-react'
+import ImageSlider from '@/components/ui/ImageSlider'
 
 interface PublicStorefrontClientProps {
     slug: string
@@ -122,7 +123,7 @@ export default function PublicStorefrontClient({
 
                     {/* Right: Share Store */}
                     <div suppressHydrationWarning className="flex items-center space-x-2">
-                        <ShareModalButton slug={slug} creatorName={creatorName} />
+                        <ShareModalButton slug={`${slug}/shop`} creatorName={`${creatorName}'s Shop`} />
                     </div>
                 </div>
             </header>
@@ -252,6 +253,13 @@ export default function PublicStorefrontClient({
                                 offerTimeLeft = 'Limited time offer'
                             }
 
+                            const productImages: string[] = Array.from(
+                                new Set([
+                                    ...(product.cover_image_url ? [product.cover_image_url] : []),
+                                    ...(Array.isArray(product.gallery) ? product.gallery : []),
+                                ])
+                            ).filter(Boolean)
+
                             return (
                                 <div
                                     key={product.id}
@@ -261,11 +269,14 @@ export default function PublicStorefrontClient({
                                     <div suppressHydrationWarning className="space-y-3">
                                         {/* Cover Image Container */}
                                         <div suppressHydrationWarning className="h-52 w-full bg-background overflow-hidden relative border-b border-border/70">
-                                            {product.cover_image_url ? (
-                                                <img
-                                                    src={product.cover_image_url}
+                                            {productImages.length > 0 ? (
+                                                <ImageSlider
+                                                    images={productImages}
                                                     alt={product.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    className="w-full h-full"
+                                                    imageClassName="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    showDots={productImages.length > 1}
+                                                    showArrows={productImages.length > 1}
                                                 />
                                             ) : (
                                                 <div suppressHydrationWarning className="w-full h-full flex flex-col items-center justify-center bg-primary/5 text-primary/60 space-y-1">
@@ -349,7 +360,7 @@ export default function PublicStorefrontClient({
                                                 </div>
                                             )}
 
-                                            <a href={`/${slug}/products/${product.id}`} className="block">
+                                            <a href={`/${slug}/products/${product.slug || product.id}`} className="block">
                                                 <h2 className="font-extrabold text-text-primary text-base leading-snug group-hover:text-primary transition-colors">
                                                     {product.title}
                                                 </h2>

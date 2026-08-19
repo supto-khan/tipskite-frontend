@@ -38,6 +38,7 @@ import {
     Eye,
     Check
 } from 'lucide-react'
+import ImageSlider from '@/components/ui/ImageSlider'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 
 type ProductType = 'digital' | 'call' | 'bundle'
@@ -87,8 +88,11 @@ export default function CreatorShop() {
     const [itemToDelete, setItemToDelete] = useState<string | null>(null)
     const [deleting, setDeleting] = useState(false)
 
-    // User email state dynamically fetched from creator profile / auth
+    // User info & creator profile state
     const [userEmail, setUserEmail] = useState('')
+    const [creatorSlug, setCreatorSlug] = useState('')
+    const [copiedProductId, setCopiedProductId] = useState<string | null>(null)
+    const [toastMessage, setToastMessage] = useState<string | null>(null)
 
     // Form fields
     const [selectedType, setSelectedType] = useState<ProductType>('digital')
@@ -103,6 +107,7 @@ export default function CreatorShop() {
     const [deliveryMethod, setDeliveryMethod] = useState('')
     const [buyerRequirements, setBuyerRequirements] = useState<BuyerRequirement[]>([])
     const [supportEmail, setSupportEmail] = useState('')
+    const [supportWhatsapp, setSupportWhatsapp] = useState('')
 
     const [title, setTitle] = useState('')
     const [category, setCategory] = useState('Other')
@@ -127,6 +132,38 @@ export default function CreatorShop() {
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const showToast = (message: string) => {
+        setToastMessage(message)
+        setTimeout(() => {
+            setToastMessage(null)
+        }, 3000)
+    }
+
+    const copyToClipboard = async (text: string, productId?: string) => {
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text)
+            } else {
+                const textArea = document.createElement('textarea')
+                textArea.value = text
+                textArea.style.position = 'fixed'
+                textArea.style.opacity = '0'
+                document.body.appendChild(textArea)
+                textArea.focus()
+                textArea.select()
+                document.execCommand('copy')
+                document.body.removeChild(textArea)
+            }
+            if (productId) {
+                setCopiedProductId(productId)
+                setTimeout(() => setCopiedProductId(null), 2000)
+            }
+            showToast('Link copied to clipboard!')
+        } catch {
+            showToast('Failed to copy link.')
+        }
+    }
+
     const fetchInitialData = async () => {
         try {
             const [productsRes, profileRes] = await Promise.allSettled([
@@ -140,6 +177,10 @@ export default function CreatorShop() {
 
             if (profileRes.status === 'fulfilled') {
                 const profile = profileRes.value.data?.profile || profileRes.value.data
+                const slug = profile?.slug || ''
+                if (slug) {
+                    setCreatorSlug(slug)
+                }
                 const email = profile?.user?.email || profile?.email || ''
                 if (email) {
                     setUserEmail(email)
@@ -173,6 +214,8 @@ export default function CreatorShop() {
         setSelectedBundleProductIds([])
         setFaqs([])
         setBuyerRequirements([])
+        setSupportEmail(userEmail || '')
+        setSupportWhatsapp('')
         setIsDiscounted(false)
         setDiscountedPriceBdt('350')
         setIsFreeForEveryone(false)
@@ -212,7 +255,25 @@ export default function CreatorShop() {
         setCategory(product.category || 'Other')
         setDescription(product.description || '')
         setCoverImageUrl(product.cover_image_url || '')
-        setGallery(product.gallery || [])
+
+        let parsedGallery: string[] = []
+        if (Array.isArray(product.gallery)) {
+            parsedGallery = product.gallery
+        } else if (typeof product.gallery === 'string') {
+            try {
+                const parsed = JSON.parse(product.gallery)
+                if (Array.isArray(parsed)) parsedGallery = parsed
+            } catch (e) {
+                if (product.gallery) parsedGallery = [product.gallery]
+            }
+        }
+
+        // If gallery is empty but cover_image_url exists, include cover_image_url in gallery so it displays
+        if (parsedGallery.length === 0 && product.cover_image_url) {
+            parsedGallery = [product.cover_image_url]
+        }
+
+        setGallery(parsedGallery)
         setPriceBdt((product.price_cents / 100).toString())
         setIsDiscounted(!!product.discount_price_cents)
         setDiscountedPriceBdt(product.discount_price_cents ? (product.discount_price_cents / 100).toString() : '350')
@@ -239,7 +300,8 @@ export default function CreatorShop() {
         setDeliveryMethod(product.delivery_method || '')
         setSelectedBundleProductIds(product.bundled_product_ids || [])
         setBuyerRequirements(product.buyer_requirements || [])
-        setSupportEmail(product.support_email || userEmail)
+        setSupportEmail(product.support_email || '')
+        setSupportWhatsapp(product.support_whatsapp || '')
         setSuccessMessage(product.success_message || 'Thanks for your support!')
         setIsContentConfirmed(product.is_content_confirmed || true)
         setFaqs(product.faqs || [])
@@ -248,8 +310,8 @@ export default function CreatorShop() {
         setShowModal(true)
     }
 
-    // Convert picked image file to Data URL for instant rendering & persistent DB storage
-    const handlePickGalleryImage = (file: File) => {
+    // Upload gallery image file to media endpoint and store clean storage URL
+    const handlePickGalleryImage = async (file: File) => {
         if (gallery.length >= 5) return
 
         const maxSizeBytes = 5 * 1024 * 1024
@@ -259,15 +321,21 @@ export default function CreatorShop() {
         }
 
         setError(null)
-        const reader = new FileReader()
-        reader.onloadend = () => {
-            const result = reader.result as string
-            if (result) {
-                setGallery((prev) => [...prev, result])
-                if (!coverImageUrl) setCoverImageUrl(result)
+        const uploadData = new FormData()
+        uploadData.append('file', file)
+
+        try {
+            const res = await axios.post('/api/v1/creator/media/upload', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+            const uploadedUrl = res.data?.url
+            if (uploadedUrl) {
+                setGallery((prev) => [...prev, uploadedUrl])
+                if (!coverImageUrl) setCoverImageUrl(uploadedUrl)
             }
+        } catch (uploadErr: any) {
+            setError(uploadErr.response?.data?.message || 'Failed to upload image. Please try again.')
         }
-        reader.readAsDataURL(file)
     }
 
     const handleAddFaq = () => {
@@ -291,7 +359,17 @@ export default function CreatorShop() {
     const handleCreateProduct = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        if (currentStep === 2) {
+            const basePriceVal = parseFloat(priceBdt || '0')
+            const discountPriceVal = parseFloat(discountedPriceBdt || '0')
+            if (isDiscounted && !isFreeForEveryone && (!discountedPriceBdt || discountPriceVal >= basePriceVal)) {
+                setError('Discounted price must be smaller than the regular base price.')
+                return
+            }
+        }
+
         if (currentStep < 4) {
+            setError(null)
             setCurrentStep((prev) => (prev + 1) as FormStep)
             return
         }
@@ -303,6 +381,13 @@ export default function CreatorShop() {
 
         if (selectedType === 'bundle' && selectedBundleProductIds.length < 2) {
             setError('Please select at least 2 products to include in this combo bundle.')
+            return
+        }
+
+        const basePriceNum = parseFloat(priceBdt || '0')
+        const discountPriceNum = parseFloat(discountedPriceBdt || '0')
+        if (isDiscounted && !isFreeForEveryone && (!discountedPriceBdt || discountPriceNum >= basePriceNum)) {
+            setError('Discounted price must be smaller than the regular base price.')
             return
         }
 
@@ -331,7 +416,8 @@ export default function CreatorShop() {
         const finalDeliveryMethod = selectedType === 'call' ? 'Zoom Call' : selectedType === 'bundle' ? 'Bundle Combo Access' : deliveryMethod
         if (finalDeliveryMethod) formData.append('delivery_method', finalDeliveryMethod)
 
-        formData.append('support_email', supportEmail || userEmail)
+        if (supportEmail) formData.append('support_email', supportEmail)
+        if (supportWhatsapp) formData.append('support_whatsapp', supportWhatsapp)
         formData.append('success_message', successMessage || 'Thanks for your support!')
         formData.append('is_content_confirmed', isContentConfirmed ? '1' : '0')
         formData.append('discount_mode', discountMode)
@@ -348,7 +434,8 @@ export default function CreatorShop() {
             formData.append(`faqs[${idx}][answer]`, faq.answer)
         })
 
-        gallery.forEach((url, idx) => {
+        const validGallery = gallery.filter((url) => typeof url === 'string' && !url.startsWith('data:'))
+        validGallery.forEach((url, idx) => {
             formData.append(`gallery[${idx}]`, url)
         })
 
@@ -392,15 +479,16 @@ export default function CreatorShop() {
     }
 
     const filteredProducts = products.filter((item) => {
-        const matchesTab = activeTab === 'active' ? (item.status ? item.status === 'active' : true) : item.status === 'pending'
+        const isApproved = item.approval_status === 'approved'
+        const matchesTab = activeTab === 'active' ? isApproved : !isApproved
         const matchesType = offeringTypeFilter === 'all' ? true : (item.type || 'digital') === offeringTypeFilter
         const matchesSearch = item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.description?.toLowerCase().includes(searchQuery.toLowerCase())
         return matchesTab && matchesType && matchesSearch
     })
 
-    const activeCount = products.filter((p) => !p.status || p.status === 'active').length
-    const pendingCount = products.filter((p) => p.status === 'pending').length
+    const activeCount = products.filter((p) => p.approval_status === 'approved').length
+    const pendingCount = products.filter((p) => p.approval_status !== 'approved').length
 
     // Calculate total individual value of selected bundle items
     const selectedBundleTotalBdt = selectedBundleProductIds.reduce((sum, id) => {
@@ -410,23 +498,31 @@ export default function CreatorShop() {
 
     if (loading) {
         return (
-            <div className="max-w-6xl mx-auto py-8 px-4 space-y-8 animate-pulse font-sans">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div suppressHydrationWarning className="max-w-6xl mx-auto py-8 px-4 space-y-8 animate-pulse font-sans">
+                <div suppressHydrationWarning className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="h-28 bg-surface border border-border rounded-2xl" />
+                        <div key={i} suppressHydrationWarning className="h-28 bg-surface border border-border rounded-2xl" />
                     ))}
                 </div>
-                <div className="flex items-center justify-between">
-                    <div className="h-10 w-48 bg-surface border border-border rounded-xl" />
-                    <div className="h-10 w-32 bg-surface border border-border rounded-xl" />
+                <div suppressHydrationWarning className="flex items-center justify-between">
+                    <div suppressHydrationWarning className="h-10 w-48 bg-surface border border-border rounded-xl" />
+                    <div suppressHydrationWarning className="h-10 w-32 bg-surface border border-border rounded-xl" />
                 </div>
-                <div className="h-64 bg-surface border border-border rounded-3xl" />
+                <div suppressHydrationWarning className="h-64 bg-surface border border-border rounded-3xl" />
             </div>
         )
     }
 
     return (
         <div className="max-w-6xl mx-auto py-8 px-4 space-y-8 font-sans">
+            {/* Toast Notification */}
+            {toastMessage && (
+                <div className="fixed bottom-6 right-6 z-50 bg-text-primary text-background px-4 py-3 rounded-2xl shadow-xl border border-border flex items-center space-x-2.5 text-xs font-bold animate-in fade-in slide-in-from-bottom-4 duration-200">
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    <span>{toastMessage}</span>
+                </div>
+            )}
+
             {/* Quick Create Offerings Header Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* 1. Digital Product Card */}
@@ -511,7 +607,7 @@ export default function CreatorShop() {
                     <div>
                         <h2 className="text-xl font-bold text-text-primary tracking-tight">Your Listings</h2>
                         <a
-                            href="/shop"
+                            href={creatorSlug ? `/${creatorSlug}/shop` : '/shop'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center space-x-1.5 text-xs text-primary hover:underline font-medium mt-0.5 group"
@@ -652,7 +748,11 @@ export default function CreatorShop() {
                                             <span>Shop Settings</span>
                                         </button>
                                         <button
-                                            onClick={() => setShowToolsMenu(false)}
+                                            onClick={() => {
+                                                setShowToolsMenu(false)
+                                                const shopUrl = `${window.location.origin}/${creatorSlug || 'shop'}/shop`
+                                                copyToClipboard(shopUrl)
+                                            }}
                                             className="cursor-pointer w-full text-left px-3 py-2 text-text-secondary hover:text-text-primary hover:bg-surface rounded-lg flex items-center space-x-2 transition-colors"
                                         >
                                             <Share2 className="h-3.5 w-3.5" />
@@ -705,6 +805,12 @@ export default function CreatorShop() {
                             : 0
                         const faqCount = Array.isArray(product.faqs) ? product.faqs.length : 0
                         const bundleItemCount = Array.isArray(product.bundled_product_ids) ? product.bundled_product_ids.length : 0
+                        const productImages: string[] = Array.from(
+                            new Set([
+                                ...(product.cover_image_url ? [product.cover_image_url] : []),
+                                ...(Array.isArray(product.gallery) ? product.gallery : []),
+                            ])
+                        ).filter(Boolean)
 
                         return (
                             <div
@@ -714,11 +820,14 @@ export default function CreatorShop() {
                                 <div className="p-5 space-y-4">
                                     {/* Thumbnail Banner with Badges */}
                                     <div className="h-44 w-full rounded-2xl bg-background overflow-hidden relative border border-border group-hover:border-primary/30 transition-colors">
-                                        {thumbnail ? (
-                                            <img
-                                                src={thumbnail}
+                                        {productImages.length > 0 ? (
+                                            <ImageSlider
+                                                images={productImages}
                                                 alt={product.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                className="w-full h-full"
+                                                imageClassName="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
+                                                showDots={productImages.length > 1}
+                                                showArrows={productImages.length > 1}
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-primary/5 flex flex-col items-center justify-center p-4 text-center space-y-2">
@@ -786,11 +895,28 @@ export default function CreatorShop() {
                                         )}
                                     </div>
 
-                                    {/* Category Pill & Action Controls */}
+                                    {/* Category Pill & Approval Status Badge */}
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
-                                            {product.category || 'Digital'}
-                                        </span>
+                                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                            <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                                                {product.category || 'Digital'}
+                                            </span>
+                                            {product.approval_status === 'approved' ? (
+                                                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-extrabold flex items-center space-x-1">
+                                                    <CheckCircle2 className="h-3 w-3" />
+                                                    <span>Live</span>
+                                                </span>
+                                            ) : product.approval_status === 'rejected' ? (
+                                                <span className="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-extrabold">
+                                                    Rejected
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[10px] font-extrabold flex items-center space-x-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    <span>Pending Approval</span>
+                                                </span>
+                                            )}
+                                        </div>
 
                                         <div className="flex items-center space-x-1 bg-background p-1 rounded-xl border border-border">
                                             <button
@@ -802,12 +928,18 @@ export default function CreatorShop() {
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    navigator.clipboard.writeText(`${window.location.origin}/shop`)
+                                                    const productSlug = product.slug || product.id
+                                                    const productUrl = `${window.location.origin}/${creatorSlug || 'creator'}/products/${productSlug}`
+                                                    copyToClipboard(productUrl, product.id)
                                                 }}
                                                 className="cursor-pointer p-1.5 text-text-muted hover:text-primary hover:bg-surface rounded-lg transition-colors"
-                                                title="Copy Storefront Link"
+                                                title="Copy Product Link"
                                             >
-                                                <Share2 className="h-3.5 w-3.5" />
+                                                {copiedProductId === product.id ? (
+                                                    <Check className="h-3.5 w-3.5 text-success" />
+                                                ) : (
+                                                    <Share2 className="h-3.5 w-3.5" />
+                                                )}
                                             </button>
                                             <button
                                                 onClick={() => setItemToDelete(product.id)}
@@ -1219,17 +1351,36 @@ export default function CreatorShop() {
                                                 {isDiscounted && !isFreeForEveryone && (
                                                     <div className="pt-3 space-y-4 border-t border-border animate-in fade-in duration-200">
                                                         <div className="space-y-1">
-                                                            <label className="block text-xs font-semibold text-text-secondary">Discounted price (BDT)</label>
+                                                            <div className="flex items-center justify-between">
+                                                                <label className="block text-xs font-semibold text-text-secondary">Discounted price (BDT)</label>
+                                                                {parseFloat(priceBdt || '0') > 0 && (
+                                                                    <span className="text-[10px] font-bold text-text-muted">Must be less than ৳{priceBdt}</span>
+                                                                )}
+                                                            </div>
                                                             <div className="relative">
                                                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold text-base">৳</span>
                                                                 <input
                                                                     type="number"
                                                                     placeholder="e.g. 350"
+                                                                    min="0"
+                                                                    max={parseFloat(priceBdt || '0') > 0 ? (parseFloat(priceBdt) - 1).toString() : undefined}
                                                                     value={discountedPriceBdt}
-                                                                    onChange={(e) => setDiscountedPriceBdt(e.target.value)}
-                                                                    className="w-full pl-9 pr-4 py-3 bg-background border border-border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary font-medium"
+                                                                    onChange={(e) => {
+                                                                        setDiscountedPriceBdt(e.target.value)
+                                                                        if (error) setError(null)
+                                                                    }}
+                                                                    className={`w-full pl-9 pr-4 py-3 bg-background border rounded-xl text-sm text-text-primary placeholder:text-text-muted focus:outline-none font-medium ${
+                                                                        parseFloat(discountedPriceBdt || '0') >= parseFloat(priceBdt || '0')
+                                                                            ? 'border-error focus:border-error'
+                                                                            : 'border-border focus:border-primary'
+                                                                    }`}
                                                                 />
                                                             </div>
+                                                            {parseFloat(discountedPriceBdt || '0') >= parseFloat(priceBdt || '0') && (
+                                                                <p className="text-[11px] font-bold text-error mt-1">
+                                                                    Discounted price must be smaller than the regular base price (৳{priceBdt}).
+                                                                </p>
+                                                            )}
                                                         </div>
 
                                                         <div className="grid grid-cols-2 gap-3">
@@ -1387,7 +1538,7 @@ export default function CreatorShop() {
                                     {/* STEP 4: Delivery Configuration & Confirmation */}
                                     {currentStep === 4 && (
                                         <div className="space-y-5 animate-in fade-in duration-200">
-                                            {/* Product Bundle Summary Section (No Delivery Selection) */}
+                                            {/* Delivery Setup */}
                                             {selectedType === 'bundle' ? (
                                                 <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
                                                     <div className="flex items-center space-x-2 border-b border-border pb-3">
@@ -1399,26 +1550,8 @@ export default function CreatorShop() {
                                                     <p className="text-xs text-text-muted leading-relaxed">
                                                         Buyers will automatically receive instant download access to all {selectedBundleProductIds.length} bundled products upon purchase.
                                                     </p>
-
-                                                    {/* Support Email */}
-                                                    <div className="space-y-1.5 pt-2">
-                                                        <label className="block text-xs font-semibold text-text-secondary">
-                                                            Support Email <span className="text-error">*</span>
-                                                        </label>
-                                                        <div className="relative">
-                                                            <Mail className="h-4 w-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                                            <input
-                                                                type="email"
-                                                                required
-                                                                value={supportEmail}
-                                                                onChange={(e) => setSupportEmail(e.target.value)}
-                                                                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none"
-                                                            />
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             ) : selectedType === 'call' ? (
-                                                /* Dedicated 1-on-1 Call Delivery Section */
                                                 <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
                                                     <div className="flex items-center space-x-2 border-b border-border pb-3">
                                                         <div className="p-1.5 bg-primary/10 text-primary rounded-lg">
@@ -1427,7 +1560,6 @@ export default function CreatorShop() {
                                                         <h4 className="text-xs font-bold tracking-wide uppercase text-text-primary">DELIVERY</h4>
                                                     </div>
 
-                                                    {/* Zoom / Meeting Link */}
                                                     <div className="space-y-1.5">
                                                         <label className="block text-xs font-semibold text-text-secondary">
                                                             Zoom / Meeting Link <span className="text-error">*</span>
@@ -1444,137 +1576,137 @@ export default function CreatorShop() {
                                                             />
                                                         </div>
                                                     </div>
-
-                                                    {/* Support Email */}
-                                                    <div className="space-y-1.5">
-                                                        <label className="block text-xs font-semibold text-text-secondary">
-                                                            Support Email <span className="text-error">*</span>
-                                                        </label>
-                                                        <div className="relative">
-                                                            <Mail className="h-4 w-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                                            <input
-                                                                type="email"
-                                                                required
-                                                                value={supportEmail}
-                                                                onChange={(e) => setSupportEmail(e.target.value)}
-                                                                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary transition-colors"
-                                                            />
-                                                        </div>
-                                                    </div>
                                                 </div>
-                                            ) : (
-                                                /* Instant or Order Based Delivery Setup for Digital Products */
-                                                <>
-                                                    {deliveryMode === 'instant' ? (
-                                                        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-                                                            <div className="flex items-center space-x-2 border-b border-border pb-3">
-                                                                <FileText className="h-4 w-4 text-primary" />
-                                                                <h4 className="text-xs font-bold tracking-wide uppercase text-text-primary">Instant Asset Delivery</h4>
+                                            ) : deliveryMode === 'instant' ? (
+                                                <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+                                                    <div className="flex items-center space-x-2 border-b border-border pb-3">
+                                                        <FileText className="h-4 w-4 text-primary" />
+                                                        <h4 className="text-xs font-bold tracking-wide uppercase text-text-primary">Instant Asset Delivery</h4>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAssetType('file')}
+                                                            className={`cursor-pointer p-3 rounded-xl border text-left transition-all ${
+                                                                assetType === 'file'
+                                                                    ? 'border-primary bg-primary/10 text-text-primary font-semibold'
+                                                                    : 'border-border bg-background text-text-muted'
+                                                            }`}
+                                                        >
+                                                            <div className="text-xs font-bold">Upload File</div>
+                                                            <p className="text-[10px] text-text-muted">Host file & auto-download</p>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAssetType('gdrive')}
+                                                            className={`cursor-pointer p-3 rounded-xl border text-left transition-all ${
+                                                                assetType === 'gdrive'
+                                                                    ? 'border-primary bg-primary/10 text-text-primary font-semibold'
+                                                                    : 'border-border bg-background text-text-muted'
+                                                            }`}
+                                                        >
+                                                            <div className="text-xs font-bold">Google Drive Link</div>
+                                                            <p className="text-[10px] text-text-muted">Share via Drive URL</p>
+                                                        </button>
+                                                    </div>
+
+                                                    {assetType === 'file' ? (
+                                                        <div className="border border-dashed border-border rounded-2xl p-5 text-center bg-background space-y-3">
+                                                            <div className="flex flex-col items-center justify-center">
+                                                                <UploadCloud className="h-6 w-6 text-primary mb-1" />
+                                                                <p className="text-xs font-bold text-text-primary">{selectedFileName || 'No file selected'}</p>
+                                                                <p className="text-[10px] text-text-muted mt-0.5">PDF, ZIP, Image, Video, or Audio (Max 150MB limit)</p>
                                                             </div>
-
-                                                            <div className="grid grid-cols-2 gap-3">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setAssetType('file')}
-                                                                    className={`cursor-pointer p-3 rounded-xl border text-left transition-all ${
-                                                                        assetType === 'file'
-                                                                            ? 'border-primary bg-primary/10 text-text-primary font-semibold'
-                                                                            : 'border-border bg-background text-text-muted'
-                                                                    }`}
-                                                                >
-                                                                    <div className="text-xs font-bold">Upload File</div>
-                                                                    <p className="text-[10px] text-text-muted">Host file & auto-download</p>
-                                                                </button>
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setAssetType('gdrive')}
-                                                                    className={`cursor-pointer p-3 rounded-xl border text-left transition-all ${
-                                                                        assetType === 'gdrive'
-                                                                            ? 'border-primary bg-primary/10 text-text-primary font-semibold'
-                                                                            : 'border-border bg-background text-text-muted'
-                                                                    }`}
-                                                                >
-                                                                    <div className="text-xs font-bold">Google Drive Link</div>
-                                                                    <p className="text-[10px] text-text-muted">Share via Drive URL</p>
-                                                                </button>
-                                                            </div>
-
-                                                            {assetType === 'file' ? (
-                                                                <div className="border border-dashed border-border rounded-2xl p-5 text-center bg-background space-y-3">
-                                                                    <div className="flex flex-col items-center justify-center">
-                                                                        <UploadCloud className="h-6 w-6 text-primary mb-1" />
-                                                                        <p className="text-xs font-bold text-text-primary">{selectedFileName || 'No file selected'}</p>
-                                                                        <p className="text-[10px] text-text-muted mt-0.5">PDF, ZIP, Image, Video, or Audio (Max 150MB limit)</p>
-                                                                    </div>
-                                                                    {selectedFile && (
-                                                                        <div className="inline-flex items-center space-x-1 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold rounded-full border border-emerald-500/20">
-                                                                            <Check className="h-3 w-3" />
-                                                                            <span>{(selectedFile.size / (1024 * 1024)).toFixed(1)} MB file ready to upload</span>
-                                                                        </div>
-                                                                    )}
-                                                                    <div>
-                                                                        <label className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary/90 transition-all">
-                                                                            <input
-                                                                                type="file"
-                                                                                className="hidden"
-                                                                                onChange={(e) => {
-                                                                                    const f = e.target.files?.[0]
-                                                                                    if (f) {
-                                                                                        const maxSizeBytes = 150 * 1024 * 1024
-                                                                                        if (f.size > maxSizeBytes) {
-                                                                                            setError(`Selected file (${(f.size / (1024 * 1024)).toFixed(1)} MB) exceeds the 150MB maximum upload limit.`)
-                                                                                            setSelectedFile(null)
-                                                                                            setSelectedFileName(null)
-                                                                                            e.target.value = ''
-                                                                                            return
-                                                                                        }
-                                                                                        setError(null)
-                                                                                        setSelectedFile(f)
-                                                                                        setSelectedFileName(f.name)
-                                                                                    }
-                                                                                }}
-                                                                            />
-                                                                            <span>{selectedFile ? 'Change File' : 'Choose File (Max 150MB)'}</span>
-                                                                        </label>
-                                                                    </div>
+                                                            {selectedFile && (
+                                                                <div className="inline-flex items-center space-x-1 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold rounded-full border border-emerald-500/20">
+                                                                    <Check className="h-3 w-3" />
+                                                                    <span>{(selectedFile.size / (1024 * 1024)).toFixed(1)} MB file ready to upload</span>
                                                                 </div>
-                                                            ) : (
-                                                                <input
-                                                                    type="url"
-                                                                    placeholder="https://drive.google.com/file/d/..."
-                                                                    value={driveUrl}
-                                                                    onChange={(e) => setDriveUrl(e.target.value)}
-                                                                    className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none"
-                                                                />
                                                             )}
+                                                            <div>
+                                                                <label className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary/90 transition-all">
+                                                                    <input
+                                                                        type="file"
+                                                                        className="hidden"
+                                                                        onChange={(e) => {
+                                                                            const f = e.target.files?.[0]
+                                                                            if (f) {
+                                                                                const maxSizeBytes = 150 * 1024 * 1024
+                                                                                if (f.size > maxSizeBytes) {
+                                                                                    setError(`Selected file (${(f.size / (1024 * 1024)).toFixed(1)} MB) exceeds the 150MB maximum upload limit.`)
+                                                                                    setSelectedFile(null)
+                                                                                    setSelectedFileName(null)
+                                                                                    e.target.value = ''
+                                                                                    return
+                                                                                }
+                                                                                setError(null)
+                                                                                setSelectedFile(f)
+                                                                                setSelectedFileName(f.name)
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <span>{selectedFile ? 'Change File' : 'Choose File (Max 150MB)'}</span>
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     ) : (
-                                                        <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-                                                            <h4 className="text-xs font-bold uppercase text-text-primary">Order Based Delivery Setup</h4>
-                                                            <input
-                                                                type="text"
-                                                                placeholder="e.g. Delivered via Email / WhatsApp"
-                                                                value={deliveryMethod}
-                                                                onChange={(e) => setDeliveryMethod(e.target.value)}
-                                                                className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none"
-                                                            />
-                                                        </div>
+                                                        <input
+                                                            type="url"
+                                                            placeholder="https://drive.google.com/file/d/..."
+                                                            value={driveUrl}
+                                                            onChange={(e) => setDriveUrl(e.target.value)}
+                                                            className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none"
+                                                        />
                                                     )}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
+                                                    <h4 className="text-xs font-bold uppercase text-text-primary">Order Based Delivery Setup</h4>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. Delivered via Email / WhatsApp"
+                                                        value={deliveryMethod}
+                                                        onChange={(e) => setDeliveryMethod(e.target.value)}
+                                                        className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none"
+                                                    />
+                                                </div>
+                                            )}
 
-                                                    {/* Support Email */}
+                                            {/* Contact Seller Channels (Email & WhatsApp) */}
+                                            <div className="bg-surface border border-border rounded-2xl p-4 space-y-4">
+                                                <div>
+                                                    <h4 className="text-xs font-bold uppercase text-text-primary">Contact Seller Channels</h4>
+                                                    <p className="text-[11px] text-text-muted mt-0.5">
+                                                        Configure Email, WhatsApp, or both for buyer inquiries on the product page.
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-3">
                                                     <div className="space-y-1">
                                                         <label className="block text-xs font-semibold text-text-secondary">Support Email</label>
                                                         <input
                                                             type="email"
-                                                            required
+                                                            placeholder="support@example.com"
                                                             value={supportEmail}
                                                             onChange={(e) => setSupportEmail(e.target.value)}
-                                                            className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none"
+                                                            className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none focus:border-primary"
                                                         />
                                                     </div>
-                                                </>
-                                            )}
+
+                                                    <div className="space-y-1">
+                                                        <label className="block text-xs font-semibold text-text-secondary">Support WhatsApp</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="e.g. +8801700000000 or WhatsApp Link"
+                                                            value={supportWhatsapp}
+                                                            onChange={(e) => setSupportWhatsapp(e.target.value)}
+                                                            className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs text-text-primary focus:outline-none focus:border-primary"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
 
                                             {/* Content Confirmation Checkbox */}
                                             <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">

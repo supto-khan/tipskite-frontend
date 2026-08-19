@@ -28,9 +28,11 @@ import { AdminHeader } from './components/AdminHeader'
 
 export default function ExecutiveDashboard() {
     const [stats, setStats] = useState<any | null>(null)
+    const [chartData, setChartData] = useState<any[]>([])
     const [recentActions, setRecentActions] = useState<any[]>([])
     const [recentTransactions, setRecentTransactions] = useState<any[]>([])
     const [batches, setBatches] = useState<any[]>([])
+    const [activeChartTab, setActiveChartTab] = useState<'earnings' | 'transactions' | 'visitors'>('earnings')
     const [loading, setLoading] = useState(true)
 
     // Modal state for disbursing payout
@@ -46,6 +48,7 @@ export default function ExecutiveDashboard() {
                 axios.get('/api/v1/admin/payouts'),
             ])
             setStats(statsRes.data.stats)
+            setChartData(statsRes.data.chart_data || [])
             setRecentActions(statsRes.data.recent_actions || [])
             setRecentTransactions(statsRes.data.recent_transactions || [])
             setBatches(payoutsRes.data.payout_batches || [])
@@ -87,6 +90,7 @@ export default function ExecutiveDashboard() {
             fetchData()
         } catch (e) {
             console.error(e)
+            alert('Failed to mark batch as paid.')
         } finally {
             setDisbursing(false)
         }
@@ -106,6 +110,11 @@ export default function ExecutiveDashboard() {
     const revenueByType = stats?.revenue_by_type || { tip: 0, membership: 0, product: 0, service: 0 }
     const totalRevCents = (revenueByType.tip + revenueByType.membership + revenueByType.product + revenueByType.service) || 1
 
+    // Chart Max Values
+    const maxEarnings = Math.max(...chartData.map(d => d.gross_cents / 100), 100)
+    const maxTxCount = Math.max(...chartData.map(d => d.tx_count), 10)
+    const maxVisitors = Math.max(...chartData.map(d => d.page_views || d.unique_visitors), 10)
+
     return (
         <div className="flex min-h-screen bg-background text-text-primary">
             {/* Sidebar Navigation */}
@@ -120,7 +129,7 @@ export default function ExecutiveDashboard() {
                         <button
                             onClick={handleGenerateBatches}
                             disabled={generating}
-                            className="py-2 px-3.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center space-x-2 disabled:opacity-50 transition-all"
+                            className="py-2 px-3.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center space-x-2 disabled:opacity-50 transition-all cursor-pointer"
                         >
                             <RefreshCw className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
                             <span>{generating ? 'Generating...' : 'Calculate Payouts'}</span>
@@ -129,7 +138,7 @@ export default function ExecutiveDashboard() {
                 />
 
                 {/* System Alerts / Urgent Queues Bar */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
                     <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="p-2 bg-amber-500/20 text-amber-600 rounded-xl">
@@ -140,47 +149,60 @@ export default function ExecutiveDashboard() {
                                 <span className="text-[11px] text-text-muted">{stats?.pending_payout_count || 0} batches ready</span>
                             </div>
                         </div>
-                        <span className="font-extrabold text-xs text-amber-600">BDT {((stats?.pending_payout_total_cents || 0) / 100).toFixed(0)}</span>
+                        <span className="font-extrabold text-xs text-amber-600">৳{((stats?.pending_payout_total_cents || 0) / 100).toFixed(0)}</span>
                     </div>
 
                     <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="p-2 bg-blue-500/20 text-blue-600 rounded-xl">
+                                <Package className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <span className="text-xs font-bold text-text-primary block">Pending Products</span>
+                                <span className="text-[11px] text-text-muted">Awaiting review</span>
+                            </div>
+                        </div>
+                        <span className="font-extrabold text-xs text-blue-600">{stats?.pending_products_count || 0} Items</span>
+                    </div>
+
+                    <div className="p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-purple-500/20 text-purple-600 rounded-xl">
+                                <Wrench className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <span className="text-xs font-bold text-text-primary block">Pending Services</span>
+                                <span className="text-[11px] text-text-muted">Awaiting review</span>
+                            </div>
+                        </div>
+                        <span className="font-extrabold text-xs text-purple-600">{stats?.pending_services_count || 0} Items</span>
+                    </div>
+
+                    <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-emerald-500/20 text-emerald-600 rounded-xl">
                                 <UserCheck className="h-4 w-4" />
                             </div>
                             <div>
-                                <span className="text-xs font-bold text-text-primary block">KYC Review Queue</span>
-                                <span className="text-[11px] text-text-muted">Verification pending</span>
+                                <span className="text-xs font-bold text-text-primary block">KYC Queue</span>
+                                <span className="text-[11px] text-text-muted">Identity verification</span>
                             </div>
                         </div>
-                        <span className="font-extrabold text-xs text-blue-600">{stats?.pending_kyc_count || 0} Accounts</span>
-                    </div>
-
-                    <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-rose-500/20 text-rose-600 rounded-xl">
-                                <ShieldAlert className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <span className="text-xs font-bold text-text-primary block">Content Flags</span>
-                                <span className="text-[11px] text-text-muted">Unresolved reports</span>
-                            </div>
-                        </div>
-                        <span className="font-extrabold text-xs text-rose-600">{stats?.open_content_flags_count || 0} Open</span>
+                        <span className="font-extrabold text-xs text-emerald-600">{stats?.pending_kyc_count || 0} Accounts</span>
                     </div>
                 </div>
 
                 {/* Primary Metric KPI Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm space-y-2">
+                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-xs space-y-2">
                         <div className="flex items-center justify-between text-xs text-text-muted font-semibold">
-                            <span>Platform Volume (GMV)</span>
+                            <span>Platform Gross (GMV)</span>
                             <div className="p-2 bg-primary-50 text-primary-600 rounded-xl">
                                 <DollarSign className="h-4 w-4" />
                             </div>
                         </div>
                         <div className="text-2xl font-extrabold text-text-primary">
-                            BDT {((stats?.platform_gross_cents || 0) / 100).toFixed(0)}
+                            ৳{((stats?.platform_gross_cents || 0) / 100).toLocaleString('en-US')}
                         </div>
                         <div className="text-[11px] text-text-muted flex items-center space-x-1">
                             <TrendingUp className="h-3 w-3 text-emerald-500" />
@@ -188,7 +210,7 @@ export default function ExecutiveDashboard() {
                         </div>
                     </div>
 
-                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm space-y-2">
+                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-xs space-y-2">
                         <div className="flex items-center justify-between text-xs text-text-muted font-semibold">
                             <span>Platform Net Earnings</span>
                             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -196,12 +218,12 @@ export default function ExecutiveDashboard() {
                             </div>
                         </div>
                         <div className="text-2xl font-extrabold text-emerald-600">
-                            BDT {((stats?.platform_fee_cents || 0) / 100).toFixed(0)}
+                            ৳{((stats?.platform_fee_cents || 0) / 100).toLocaleString('en-US')}
                         </div>
-                        <div className="text-[11px] text-text-muted">5% TipSkite fee share</div>
+                        <div className="text-[11px] text-text-muted">5% Platform charge share</div>
                     </div>
 
-                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm space-y-2">
+                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-xs space-y-2">
                         <div className="flex items-center justify-between text-xs text-text-muted font-semibold">
                             <span>Active Creators</span>
                             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -211,10 +233,10 @@ export default function ExecutiveDashboard() {
                         <div className="text-2xl font-extrabold text-text-primary">
                             {stats?.creator_count || 0}
                         </div>
-                        <div className="text-[11px] text-text-muted">{stats?.user_count || 0} total registered accounts</div>
+                        <div className="text-[11px] text-text-muted">{stats?.user_count || 0} total registered users</div>
                     </div>
 
-                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm space-y-2">
+                    <div className="bg-surface rounded-2xl p-5 border border-border shadow-xs space-y-2">
                         <div className="flex items-center justify-between text-xs text-text-muted font-semibold">
                             <span>Active Memberships</span>
                             <div className="p-2 bg-violet-50 text-violet-600 rounded-xl">
@@ -225,6 +247,102 @@ export default function ExecutiveDashboard() {
                             {stats?.active_subscription_count || 0}
                         </div>
                         <div className="text-[11px] text-text-muted">{stats?.supporter_count || 0} unique supporters</div>
+                    </div>
+                </div>
+
+                {/* 30-Day Platform Analytics Interactive Charts */}
+                <div className="bg-surface rounded-2xl border border-border shadow-xs p-6 space-y-4 mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+                        <div>
+                            <h3 className="font-extrabold text-text-primary text-base flex items-center space-x-2">
+                                <TrendingUp className="h-4 w-4 text-primary-600" />
+                                <span>30-Day Platform Performance & Trends</span>
+                            </h3>
+                            <p className="text-xs text-text-muted mt-0.5">Visualize platform earnings, transaction velocity, and visitor traffic.</p>
+                        </div>
+
+                        {/* Chart Switcher Buttons */}
+                        <div className="flex items-center bg-background border border-border p-1 rounded-xl">
+                            <button
+                                onClick={() => setActiveChartTab('earnings')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    activeChartTab === 'earnings' ? 'bg-primary-600 text-white shadow-xs' : 'text-text-secondary hover:text-text-primary'
+                                }`}
+                            >
+                                Earnings (BDT)
+                            </button>
+                            <button
+                                onClick={() => setActiveChartTab('transactions')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    activeChartTab === 'transactions' ? 'bg-primary-600 text-white shadow-xs' : 'text-text-secondary hover:text-text-primary'
+                                }`}
+                            >
+                                Transactions
+                            </button>
+                            <button
+                                onClick={() => setActiveChartTab('visitors')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    activeChartTab === 'visitors' ? 'bg-primary-600 text-white shadow-xs' : 'text-text-secondary hover:text-text-primary'
+                                }`}
+                            >
+                                Visitors & Traffic
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Chart Visual Bars / Sparkline */}
+                    <div className="pt-4">
+                        {chartData.length === 0 ? (
+                            <div className="text-center py-12 text-xs text-text-muted">No historical data recorded yet.</div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="h-48 flex items-end gap-1.5 sm:gap-2 px-2 pt-6 pb-2 border-b border-border">
+                                    {chartData.map((d, i) => {
+                                        let heightPct = 4
+                                        let barColor = 'bg-primary-500'
+                                        let tooltipText = ''
+
+                                        if (activeChartTab === 'earnings') {
+                                            const gross = d.gross_cents / 100
+                                            heightPct = Math.max(4, Math.round((gross / maxEarnings) * 100))
+                                            barColor = gross > 0 ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-border'
+                                            tooltipText = `${d.label}: ৳${gross.toLocaleString('en-US')} gross (৳${(d.platform_fee_cents / 100).toFixed(0)} fee)`
+                                        } else if (activeChartTab === 'transactions') {
+                                            heightPct = Math.max(4, Math.round((d.tx_count / maxTxCount) * 100))
+                                            barColor = d.tx_count > 0 ? 'bg-primary-500 hover:bg-primary-600' : 'bg-border'
+                                            tooltipText = `${d.label}: ${d.tx_count} transactions`
+                                        } else {
+                                            const visits = d.page_views || 0
+                                            heightPct = Math.max(4, Math.round((visits / maxVisitors) * 100))
+                                            barColor = visits > 0 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-border'
+                                            tooltipText = `${d.label}: ${visits} views (${d.unique_visitors || 0} unique)`
+                                        }
+
+                                        return (
+                                            <div
+                                                key={i}
+                                                className="flex-1 flex flex-col items-center group relative h-full justify-end"
+                                            >
+                                                {/* Tooltip */}
+                                                <div className="absolute -top-8 bg-black/80 text-white text-[10px] px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-md">
+                                                    {tooltipText}
+                                                </div>
+                                                <div
+                                                    style={{ height: `${heightPct}%` }}
+                                                    className={`w-full rounded-t-md transition-all duration-300 ${barColor}`}
+                                                />
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                <div className="flex justify-between text-[11px] text-text-muted font-mono font-semibold px-2">
+                                    <span>{chartData[0]?.label}</span>
+                                    <span>{chartData[Math.floor(chartData.length / 2)]?.label}</span>
+                                    <span>{chartData[chartData.length - 1]?.label}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

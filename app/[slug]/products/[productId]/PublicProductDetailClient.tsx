@@ -26,8 +26,12 @@ import {
     Sparkles,
     ShieldCheck,
     Check,
-    Send
+    Send,
+    Mail,
+    Phone,
+    MessageCircle
 } from 'lucide-react'
+import ImageSlider from '@/components/ui/ImageSlider'
 
 interface PublicProductDetailClientProps {
     slug: string
@@ -91,8 +95,11 @@ export default function PublicProductDetailClient({
     ]
 
     const handleTagClick = (tag: string) => {
-        if (comment.includes(tag)) return
-        setComment((prev) => (prev ? `${prev} ${tag}` : tag))
+        if (comment === tag) {
+            setComment('')
+        } else {
+            setComment(tag)
+        }
     }
 
     const handlePurchase = async (e: React.FormEvent) => {
@@ -275,7 +282,7 @@ export default function PublicProductDetailClient({
                                                 type="button"
                                                 onClick={() => handleTagClick(tag)}
                                                 className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                                                    comment.includes(tag)
+                                                    comment === tag
                                                         ? 'bg-primary text-white border-primary shadow-xs'
                                                         : 'bg-background hover:bg-elevated-surface text-text-secondary border-border'
                                                 }`}
@@ -314,33 +321,49 @@ export default function PublicProductDetailClient({
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                         {/* Left Column: Cover, Info & Reviews */}
                         <div className="lg:col-span-7 space-y-10">
-                            {/* Product Cover Image Container */}
-                            <div className="bg-surface border border-border rounded-3xl overflow-hidden shadow-xs relative">
-                                <div className="aspect-video w-full bg-background relative overflow-hidden">
-                                    {product.cover_image_url ? (
-                                        <img
-                                            src={product.cover_image_url}
-                                            alt={product.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center bg-primary/5 text-primary/60">
-                                            <FileText className="h-16 w-16" />
-                                        </div>
-                                    )}
+                            {/* Product Cover Image / Image Slider Container */}
+                            {(() => {
+                                const productImages: string[] = Array.from(
+                                    new Set([
+                                        ...(product.cover_image_url ? [product.cover_image_url] : []),
+                                        ...(Array.isArray(product.gallery) ? product.gallery : []),
+                                    ])
+                                ).filter(Boolean)
 
-                                    {/* Type Badge */}
-                                    <div className="absolute top-4 left-4">
-                                        <span className="px-3.5 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-white text-xs font-black uppercase tracking-wider shadow-md">
-                                            {product.type === 'bundle'
-                                                ? 'BUNDLE'
-                                                : product.type === 'call'
-                                                ? 'SERVICE'
-                                                : 'DIGITAL PRODUCT'}
-                                        </span>
+                                return (
+                                    <div className="bg-surface border border-border rounded-3xl overflow-hidden shadow-xs relative">
+                                        <div className="aspect-video w-full bg-background relative overflow-hidden">
+                                            {productImages.length > 0 ? (
+                                                <ImageSlider
+                                                    images={productImages}
+                                                    alt={product.title}
+                                                    className="w-full h-full"
+                                                    imageClassName="w-full h-full object-cover"
+                                                    showDots={productImages.length > 1}
+                                                    showArrows={productImages.length > 1}
+                                                    autoplay={productImages.length > 1}
+                                                    autoplayDelay={5000}
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center bg-primary/5 text-primary/60">
+                                                    <FileText className="h-16 w-16" />
+                                                </div>
+                                            )}
+
+                                            {/* Type Badge */}
+                                            <div className="absolute top-4 left-4 z-10 pointer-events-none">
+                                                <span className="px-3.5 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-white text-xs font-black uppercase tracking-wider shadow-md">
+                                                    {product.type === 'bundle'
+                                                        ? 'BUNDLE'
+                                                        : product.type === 'call'
+                                                        ? 'SERVICE'
+                                                        : 'DIGITAL PRODUCT'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                )
+                            })()}
 
                             {/* Seller Info Pill */}
                             <div className="inline-flex items-center space-x-2.5 px-3.5 py-2 bg-surface border border-border rounded-full shadow-xs">
@@ -371,18 +394,46 @@ export default function PublicProductDetailClient({
                                     </div>
                                 )}
 
-                                 {/* Action Buttons */}
-                                 <div className="flex items-center space-x-3 pt-2">
-                                     <a
-                                         href={`/${slug}`}
-                                         className="px-4 py-2.5 bg-background hover:bg-elevated-surface border border-border text-text-secondary hover:text-text-primary text-xs font-bold rounded-xl flex items-center space-x-2 transition-all shadow-xs"
-                                     >
-                                         <MessageSquare className="h-4 w-4 text-primary" />
-                                         <span>Contact seller</span>
-                                     </a>
+                                  {/* Action Buttons: Contact Seller (Email / WhatsApp) & Share */}
+                                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                                      {product.support_email && (
+                                          <a
+                                              href={`mailto:${product.support_email}?subject=Inquiry regarding ${encodeURIComponent(product.title)}`}
+                                              className="px-4 py-2.5 bg-background hover:bg-elevated-surface border border-border text-text-secondary hover:text-text-primary text-xs font-bold rounded-xl flex items-center space-x-2 transition-all shadow-xs"
+                                          >
+                                              <Mail className="h-4 w-4 text-primary" />
+                                              <span>Contact via Email</span>
+                                          </a>
+                                      )}
 
-                                     <ShareModalButton slug={`${slug}/products/${product.id}`} creatorName={product.title} />
-                                 </div>
+                                      {product.support_whatsapp && (
+                                          <a
+                                              href={
+                                                  product.support_whatsapp.startsWith('http')
+                                                      ? product.support_whatsapp
+                                                      : `https://wa.me/${product.support_whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I have a question about "${product.title}"`)}`
+                                              }
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-xl flex items-center space-x-2 transition-all shadow-xs"
+                                          >
+                                              <MessageCircle className="h-4 w-4 text-emerald-500" />
+                                              <span>WhatsApp Seller</span>
+                                          </a>
+                                      )}
+
+                                      {!product.support_email && !product.support_whatsapp && (
+                                          <a
+                                              href={`/${slug}`}
+                                              className="px-4 py-2.5 bg-background hover:bg-elevated-surface border border-border text-text-secondary hover:text-text-primary text-xs font-bold rounded-xl flex items-center space-x-2 transition-all shadow-xs"
+                                          >
+                                              <MessageSquare className="h-4 w-4 text-primary" />
+                                              <span>Visit Creator</span>
+                                          </a>
+                                      )}
+
+                                      <ShareModalButton slug={`${slug}/products/${product.slug || product.id}`} creatorName={product.title} />
+                                  </div>
                             </div>
 
                             {/* Reviews Section ("WHAT BUYERS SAY / Reviews") */}

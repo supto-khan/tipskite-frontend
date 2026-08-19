@@ -67,7 +67,9 @@ export default function PayoutSettings() {
                 }
 
                 if (summaryRes?.data?.summary) {
-                    setAvailableBalance(summaryRes.data.summary.net_cents ? summaryRes.data.summary.net_cents / 100 : 0)
+                    const summary = summaryRes.data.summary
+                    const net = summary.net_cents ? summary.net_cents / 100 : (summary.gross_cents ? (summary.gross_cents * 0.95) / 100 : 0)
+                    setAvailableBalance(net)
                 }
             } catch (err) {
                 console.error(err)

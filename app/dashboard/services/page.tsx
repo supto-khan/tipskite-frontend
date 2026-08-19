@@ -18,6 +18,7 @@ import {
     Check
 } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import ImageSlider from '@/components/ui/ImageSlider'
 
 export default function ServicesDashboard() {
     const [services, setServices] = useState<any[]>([])
@@ -89,8 +90,21 @@ export default function ServicesDashboard() {
         setPrice(service.price_cents ? String(service.price_cents / 100) : '1000')
         setDeliveryDays(service.delivery_days || 3)
         setDescription(service.description || '')
-        setClientRequirements(service.client_requirements || '')
-        setPortfolioImages(service.portfolio_images || [])
+        let parsedPortfolio: string[] = []
+        if (Array.isArray(service.portfolio_images)) {
+            parsedPortfolio = service.portfolio_images
+        } else if (typeof service.portfolio_images === 'string') {
+            try {
+                const parsed = JSON.parse(service.portfolio_images)
+                if (Array.isArray(parsed)) parsedPortfolio = parsed
+            } catch (e) {
+                if (service.portfolio_images) parsedPortfolio = [service.portfolio_images]
+            }
+        }
+        if (parsedPortfolio.length === 0 && service.cover_image_url) {
+            parsedPortfolio = [service.cover_image_url]
+        }
+        setPortfolioImages(parsedPortfolio)
         setIsConfirmed(true)
         setError(null)
         setShowModal(true)
@@ -98,7 +112,7 @@ export default function ServicesDashboard() {
 
     const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([])
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
@@ -115,9 +129,22 @@ export default function ServicesDashboard() {
         }
 
         setError(null)
-        const localUrl = URL.createObjectURL(file)
-        setPortfolioImages((prev) => [...prev, localUrl])
-        setPendingImageFiles((prev) => [...prev, file])
+        const uploadData = new FormData()
+        uploadData.append('file', file)
+
+        try {
+            const res = await axios.post('/api/v1/creator/media/upload', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+            const uploadedUrl = res.data?.url
+            if (uploadedUrl) {
+                setPortfolioImages((prev) => [...prev, uploadedUrl])
+            }
+        } catch (uploadErr: any) {
+            setError(uploadErr.response?.data?.message || 'Failed to upload portfolio image. Please try again.')
+        } finally {
+            e.target.value = ''
+        }
     }
 
     const removePortfolioImage = (index: number) => {
@@ -304,14 +331,30 @@ export default function ServicesDashboard() {
                                     className="bg-surface border border-border rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-6 space-y-4"
                                 >
                                     <div className="space-y-3">
-                                        {/* Portfolio Preview Grid if available */}
-                                        {service.portfolio_images && service.portfolio_images.length > 0 && (
-                                            <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden max-h-36">
-                                                {service.portfolio_images.slice(0, 2).map((imgUrl: string, idx: number) => (
-                                                    <img key={idx} src={imgUrl} alt="" className="w-full h-36 object-cover" />
-                                                ))}
-                                            </div>
-                                        )}
+                                        {/* Portfolio Image Slider if available */}
+                                        {(() => {
+                                            const serviceImages: string[] = Array.from(
+                                                new Set([
+                                                    ...(service.cover_image_url ? [service.cover_image_url] : []),
+                                                    ...(Array.isArray(service.portfolio_images) ? service.portfolio_images : []),
+                                                ])
+                                            ).filter(Boolean)
+
+                                            if (serviceImages.length === 0) return null
+
+                                            return (
+                                                <div className="rounded-2xl overflow-hidden max-h-40 border border-border">
+                                                    <ImageSlider
+                                                        images={serviceImages}
+                                                        alt={service.title}
+                                                        className="w-full h-40"
+                                                        imageClassName="w-full h-40 object-cover"
+                                                        showDots={serviceImages.length > 1}
+                                                        showArrows={serviceImages.length > 1}
+                                                    />
+                                                </div>
+                                            )
+                                        })()}
 
                                         <div className="flex items-center justify-between">
                                             <span className="text-base font-extrabold text-text-primary">

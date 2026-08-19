@@ -74,8 +74,12 @@ export default function TipModal({ profile }: TipModalProps) {
     return (
         <div suppressHydrationWarning className="bg-surface rounded-3xl shadow-xl p-6 border border-border flex flex-col justify-between font-sans">
             <div suppressHydrationWarning className="flex items-center space-x-3 mb-4">
-                <div suppressHydrationWarning className="p-3 bg-primary-50 text-primary-600 rounded-2xl">
-                    <Coffee className="w-6 h-6 text-primary-600" />
+                <div suppressHydrationWarning className="p-3 bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center">
+                    {unitEmoji ? (
+                        <span className="text-2xl leading-none">{unitEmoji}</span>
+                    ) : (
+                        <Coffee className="w-6 h-6 text-primary-600" />
+                    )}
                 </div>
                 <div suppressHydrationWarning>
                     <h3 className="text-lg font-bold text-text-primary">
@@ -130,24 +134,33 @@ export default function TipModal({ profile }: TipModalProps) {
                     </div>
                 ) : (
                     /* Layout Type 2: Quantity Multiplier */
-                    <div className="flex items-center justify-between p-3.5 bg-background rounded-2xl border border-border">
-                        <div className="flex items-center space-x-2">
-                            <span className="text-base">{unitEmoji}</span>
-                            <span className="font-bold text-sm text-text-primary">× {quantity}</span>
+                    <div className="p-4 bg-background rounded-2xl border border-border space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2.5">
+                                <span className="text-2xl leading-none select-none">{unitEmoji}</span>
+                                <span className="text-sm font-extrabold text-text-primary">
+                                    {unitNoun.charAt(0).toUpperCase() + unitNoun.slice(1)}
+                                </span>
+                            </div>
+                            <span className="text-xs font-bold text-primary-600 bg-primary-50 px-2.5 py-1 rounded-full border border-primary-200/50">
+                                ৳{unitPriceBDT} each
+                            </span>
                         </div>
-                        <div className="flex space-x-1.5">
+
+                        <div className="grid grid-cols-4 gap-2 pt-1">
                             {[1, 3, 5, 10].map((num) => (
                                 <button
                                     key={num}
                                     type="button"
                                     onClick={() => setQuantity(num)}
-                                    className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                    className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1 cursor-pointer select-none ${
                                         quantity === num
-                                            ? 'bg-primary-600 text-white shadow-xs'
-                                            : 'bg-surface text-text-secondary hover:bg-border border border-border'
+                                            ? 'bg-primary-600 text-white shadow-md shadow-primary-500/25 scale-[1.02]'
+                                            : 'bg-surface hover:bg-elevated-surface text-text-secondary border border-border hover:border-text-muted/40'
                                     }`}
                                 >
-                                    {num}
+                                    <span>{num}</span>
+                                    <span className="text-[10px] font-semibold opacity-75">{num === 1 ? unitNoun : `${unitNoun}s`}</span>
                                 </button>
                             ))}
                         </div>

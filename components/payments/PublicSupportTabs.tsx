@@ -20,7 +20,11 @@ export default function PublicSupportTabs({ profile }: { profile: any }) {
                         activeTab === 'tip' ? 'bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
                     }`}
                 >
-                    <Coffee className="h-4 w-4 text-warning-600 text-amber-500" />
+                    {profile.unit_emoji ? (
+                        <span className="text-sm">{profile.unit_emoji}</span>
+                    ) : (
+                        <Coffee className="h-4 w-4 text-warning-600 text-amber-500" />
+                    )}
                     <span>{profile.button_wording || 'Support'}</span>
                 </button>
                 <button

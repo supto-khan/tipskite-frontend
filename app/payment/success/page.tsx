@@ -79,8 +79,11 @@ function PaymentSuccessContent() {
     }, [tranId])
 
     const handleTagClick = (tag: string) => {
-        if (comment.includes(tag)) return
-        setComment((prev) => (prev ? `${prev} ${tag}` : tag))
+        if (comment === tag) {
+            setComment('')
+        } else {
+            setComment(tag)
+        }
     }
 
     const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -251,7 +254,7 @@ function PaymentSuccessContent() {
                                         ))}
                                     </div>
 
-                                    {/* Quick Suggestion Tags */}
+                                     {/* Quick Suggestion Tags */}
                                     <div className="flex flex-wrap gap-2 justify-center">
                                         {quickTags.map((tag) => (
                                             <button
@@ -259,7 +262,7 @@ function PaymentSuccessContent() {
                                                 type="button"
                                                 onClick={() => handleTagClick(tag)}
                                                 className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                                                    comment.includes(tag)
+                                                    comment === tag
                                                         ? 'bg-primary text-white border-primary shadow-xs'
                                                         : 'bg-background hover:bg-elevated-surface text-text-secondary border-border'
                                                 }`}

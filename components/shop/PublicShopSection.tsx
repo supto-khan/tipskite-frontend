@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import axios from '@/lib/axios'
 import { ShoppingBag, ArrowRight, ChevronDown, ChevronUp, Flame, Tag, FileText, Video, Package, Clock, Users, Sparkles, AlertCircle, Cloud, Gift, Zap } from 'lucide-react'
+import ImageSlider from '@/components/ui/ImageSlider'
 
 export default function PublicShopSection({ slug, creatorName }: { slug: string; creatorName: string }) {
     const [products, setProducts] = useState<any[]>([])
@@ -112,19 +113,29 @@ export default function PublicShopSection({ slug, creatorName }: { slug: string;
                         offerTimeLeft = 'Limited time offer'
                     }
 
+                    const productImages: string[] = Array.from(
+                        new Set([
+                            ...(product.cover_image_url ? [product.cover_image_url] : []),
+                            ...(Array.isArray(product.gallery) ? product.gallery : []),
+                        ])
+                    ).filter(Boolean)
+
                     return (
                         <div
                             key={product.id}
                             className="bg-background rounded-3xl border border-border hover:border-primary/40 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between group relative"
                         >
                             <div className="space-y-3">
-                                {/* Cover Image Container with Overlays */}
+                                {/* Cover Image / Gallery Container with Overlays */}
                                 <div className="h-44 w-full bg-surface overflow-hidden relative border-b border-border/70">
-                                    {product.cover_image_url ? (
-                                        <img
-                                            src={product.cover_image_url}
+                                    {productImages.length > 0 ? (
+                                        <ImageSlider
+                                            images={productImages}
                                             alt={product.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            className="w-full h-full"
+                                            imageClassName="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
+                                            showDots={productImages.length > 1}
+                                            showArrows={productImages.length > 1}
                                         />
                                     ) : (
                                         <div className="w-full h-full flex flex-col items-center justify-center bg-primary/5 text-primary/60 space-y-1">

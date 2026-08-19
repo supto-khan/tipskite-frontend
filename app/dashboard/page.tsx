@@ -160,7 +160,8 @@ export default function DashboardHome() {
 
     const username = profile?.user?.display_name || profile?.display_name || 'Creator'
     const slug = profile?.slug || 'yourname'
-    const totalEarnings = summary?.gross_cents ? (summary.gross_cents / 100).toFixed(0) : '0'
+    const netEarningsVal = summary?.net_cents ? summary.net_cents / 100 : (summary?.gross_cents ? (summary.gross_cents * 0.95) / 100 : 0)
+    const totalEarnings = netEarningsVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 
     return (
         <div className="max-w-5xl mx-auto py-6 space-y-8 font-sans">

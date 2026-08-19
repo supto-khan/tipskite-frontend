@@ -438,10 +438,14 @@ export default function FinanceManagementPage() {
                                                                 <CheckCircle2 className="h-3 w-3" />
                                                                 <span>Disbursed</span>
                                                             </span>
+                                                        ) : batch.status === 'failed' ? (
+                                                            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700">
+                                                                <span>Rejected</span>
+                                                            </span>
                                                         ) : (
                                                             <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
                                                                 <Clock className="h-3 w-3" />
-                                                                <span>Pending</span>
+                                                                <span>Pending Verification</span>
                                                             </span>
                                                         )}
                                                     </td>
@@ -450,14 +454,36 @@ export default function FinanceManagementPage() {
                                                             <span className="font-mono text-text-muted text-[11px]">
                                                                 {batch.external_reference}
                                                             </span>
+                                                        ) : batch.status === 'failed' ? (
+                                                            <span className="text-[11px] text-text-muted italic">
+                                                                {batch.failure_reason || 'Rejected'}
+                                                            </span>
                                                         ) : (
-                                                            <button
-                                                                onClick={() => setDisbursingBatch(batch)}
-                                                                className="py-1 px-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-[11px] rounded-lg shadow-sm inline-flex items-center space-x-1"
-                                                            >
-                                                                <Send className="h-3 w-3" />
-                                                                <span>Mark Paid</span>
-                                                            </button>
+                                                            <div className="flex items-center space-x-1.5">
+                                                                <button
+                                                                    onClick={() => setDisbursingBatch(batch)}
+                                                                    className="py-1 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg shadow-xs inline-flex items-center space-x-1 cursor-pointer"
+                                                                >
+                                                                    <Send className="h-3 w-3" />
+                                                                    <span>Verify & Pay</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        const reason = prompt('Enter rejection reason for this withdrawal:')
+                                                                        if (!reason) return
+                                                                        try {
+                                                                            await axios.post(`/api/v1/admin/payouts/${batch.id}/reject`, { reason })
+                                                                            fetchPayouts()
+                                                                        } catch (e) {
+                                                                            console.error(e)
+                                                                            alert('Failed to reject payout.')
+                                                                        }
+                                                                    }}
+                                                                    className="py-1 px-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] rounded-lg shadow-xs inline-flex items-center space-x-1 cursor-pointer"
+                                                                >
+                                                                    <span>Reject</span>
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </td>
                                                 </tr>

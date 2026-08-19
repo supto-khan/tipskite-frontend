@@ -2,22 +2,26 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/lib/useAuth'
 import {
+    Coffee,
     LayoutDashboard,
     Users,
     UserCheck,
     CreditCard,
     ShoppingBag,
-    FileText,
     ShieldAlert,
     MessageSquare,
     BarChart3,
     Sliders,
     Palette,
     Shield,
+    ShieldCheck,
     Activity,
     LifeBuoy,
-    Bell
+    Bell,
+    LogOut,
+    ExternalLink
 } from 'lucide-react'
 
 interface NavItem {
@@ -29,12 +33,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { label: 'Executive Dashboard', href: '/admin', icon: LayoutDashboard },
+    { label: 'KYC Review Queue', href: '/admin/kyc', icon: ShieldCheck, badge: null },
     { label: 'User Management', href: '/admin/users', icon: Users, badge: null },
     { label: 'Creator Management', href: '/admin/creators', icon: UserCheck },
     { label: 'Finance & Payouts', href: '/admin/finance', icon: CreditCard },
     { label: 'Commerce Suite', href: '/admin/commerce', icon: ShoppingBag },
-    { label: 'Content Management', href: '/admin/content', icon: FileText },
-    { label: 'Trust & Safety', href: '/admin/safety', icon: ShieldAlert },
+    { label: 'Fraud & Risk Signals', href: '/admin/safety', icon: ShieldAlert },
     { label: 'Support & Tickets', href: '/admin/support', icon: LifeBuoy },
     { label: 'Analytics & BI', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Feature Flags', href: '/admin/feature-flags', icon: Sliders },
@@ -44,18 +48,17 @@ const navItems: NavItem[] = [
 
 export function AdminSidebar() {
     const pathname = usePathname()
+    const { logout } = useAuth()
 
     return (
-        <aside className="w-64 bg-surface border-r border-border min-h-screen p-4 flex flex-col justify-between shrink-0">
+        <aside className="w-64 bg-surface border-r border-border sticky top-0 h-screen p-4 flex flex-col justify-between shrink-0 overflow-y-auto">
             <div className="space-y-6">
                 {/* Brand / Logo */}
                 <div className="px-3 py-2 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center font-black text-lg shadow-md">
-                            T
-                        </div>
+                    <div className="flex items-center space-x-2.5">
+                        <Coffee className="h-8 w-8 text-primary-600 shrink-0" />
                         <div>
-                            <span className="font-extrabold text-base text-text-primary block leading-tight">TipSkite</span>
+                            <span className="font-extrabold text-base text-text-primary block leading-tight">TipsKite</span>
                             <span className="text-[10px] uppercase tracking-wider font-semibold text-primary-600">Super Admin</span>
                         </div>
                     </div>
@@ -91,18 +94,27 @@ export function AdminSidebar() {
                 </nav>
             </div>
 
-            {/* Footer / System Status */}
-            <div className="p-3 bg-background rounded-xl border border-border space-y-2">
-                <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-text-muted font-medium">Environment</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-success-50 text-success-700 border border-success-200">
-                        Local / Dev
-                    </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-text-muted font-medium">Engine</span>
-                    <span className="font-mono text-[10px] text-text-secondary">MySQL/MariaDB</span>
-                </div>
+            {/* Footer / User Controls */}
+            <div className="space-y-2 pt-4">
+                <Link
+                    href="/dashboard"
+                    className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:bg-background hover:text-text-primary transition-all border border-border"
+                >
+                    <div className="flex items-center space-x-2">
+                        <ExternalLink className="h-3.5 w-3.5 text-text-muted" />
+                        <span>Creator Dashboard</span>
+                    </div>
+                </Link>
+
+                <button
+                    onClick={() => logout()}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                >
+                    <div className="flex items-center space-x-2">
+                        <LogOut className="h-3.5 w-3.5" />
+                        <span>Sign Out</span>
+                    </div>
+                </button>
             </div>
         </aside>
     )
