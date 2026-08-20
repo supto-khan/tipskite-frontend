@@ -17,7 +17,7 @@ function Footer() {
               </span>
             </div>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Support your favorite Bangladeshi creators with one-time tips, memberships, and more.
+              Support your favorite Bangladeshi creators with one-time tips, digital products, and courses.
             </p>
           </div>
 

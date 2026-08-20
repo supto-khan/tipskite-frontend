@@ -1,7 +1,8 @@
 'use client'
 
 import { ThemeToggle } from '@/app/components/ui/theme-toggle'
-import { Bell, ShieldCheck, Search, Sparkles } from 'lucide-react'
+import { Bell, ShieldCheck, Search, Sparkles, LogOut } from 'lucide-react'
+import { useAuth } from '@/lib/useAuth'
 
 interface AdminHeaderProps {
     title: string
@@ -10,6 +11,8 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ title, subtitle, actions }: AdminHeaderProps) {
+    const { logout } = useAuth()
+
     return (
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border mb-6">
             <div>

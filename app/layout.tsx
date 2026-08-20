@@ -14,8 +14,8 @@ export const metadata: Metadata = {
     template: "%s | TipsKite",
   },
   description:
-    "The easiest way for creators in Bangladesh to accept tips, memberships, and support via bKash, Nagad, Rocket, and Bank Transfer.",
-  keywords: ["TipsKite", "creator support", "tip", "Bangladesh", "bKash", "Nagad", "membership"],
+    "The easiest way for creators in Bangladesh to accept tips, sell products, and earn support via bKash, Nagad, Rocket, and Bank Transfer.",
+  keywords: ["TipsKite", "creator support", "tip", "Bangladesh", "bKash", "Nagad", "courses", "digital products"],
   authors: [{ name: "TipsKite Team" }],
   openGraph: {
     siteName: "TipsKite",
@@ -41,10 +41,39 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  // 1. Suppress all window runtime errors from chrome extensions (e.g. M_ID, executors/200.js)
+                  // 1. Remove extension-injected attributes immediately to prevent React hydration diffs
+                  if (typeof document !== 'undefined') {
+                    var cleanSkinAttrs = function() {
+                      var els = document.querySelectorAll('[bis_skin_checked]');
+                      for (var k = 0; k < els.length; k++) {
+                        els[k].removeAttribute('bis_skin_checked');
+                      }
+                    };
+                    cleanSkinAttrs();
+
+                    if (typeof MutationObserver !== 'undefined' && document.documentElement) {
+                      var observer = new MutationObserver(function(mutations) {
+                        for (var m = 0; m < mutations.length; m++) {
+                          var mutation = mutations[m];
+                          if (mutation.type === 'attributes' && mutation.attributeName === 'bis_skin_checked') {
+                            if (mutation.target && mutation.target.removeAttribute) {
+                              mutation.target.removeAttribute('bis_skin_checked');
+                            }
+                          }
+                        }
+                      });
+                      observer.observe(document.documentElement, {
+                        attributes: true,
+                        subtree: true,
+                        attributeFilter: ['bis_skin_checked']
+                      });
+                    }
+                  }
+
+                  // 2. Suppress window runtime errors from chrome/moz extensions
                   window.addEventListener('error', function(event) {
                     var filename = event.filename || '';
-                    var msg = event.message || '';
+                    var msg = event.message || (event.error && (event.error.message || event.error.stack)) || '';
                     if (
                       filename.indexOf('chrome-extension:') !== -1 ||
                       filename.indexOf('moz-extension:') !== -1 ||
@@ -67,20 +96,37 @@ export default function RootLayout({
                     }
                   }, true);
 
-                  // 2. Suppress console warnings & errors about extensions & bis_skin_checked
+                  // 3. Suppress console warnings & errors about extensions & bis_skin_checked
                   var origError = console.error;
                   var origWarn = console.warn;
                   var shouldSuppress = function(args) {
-                    for (var i = 0; i < args.length; i++) {
-                      var a = args[i];
-                      var str = typeof a === 'string' ? a : (a && typeof a.toString === 'function' ? a.toString() : '');
-                      if (
-                        str.indexOf('bis_skin_checked') !== -1 ||
-                        str.indexOf('M_ID') !== -1 ||
-                        str.indexOf('chrome-extension://') !== -1 ||
-                        str.indexOf('executors/200.js') !== -1
-                      ) return true;
-                    }
+                    try {
+                      for (var i = 0; i < args.length; i++) {
+                        var a = args[i];
+                        var str = '';
+                        if (typeof a === 'string') {
+                          str = a;
+                        } else if (a && typeof a === 'object') {
+                          try {
+                            str = (a.message || '') + ' ' + (a.stack || '') + ' ' + JSON.stringify(a);
+                          } catch (err) {
+                            str = String(a);
+                          }
+                        } else if (a) {
+                          str = String(a);
+                        }
+
+                        if (
+                          str.indexOf('bis_skin_checked') !== -1 ||
+                          str.indexOf('M_ID') !== -1 ||
+                          str.indexOf('chrome-extension://') !== -1 ||
+                          str.indexOf('moz-extension://') !== -1 ||
+                          str.indexOf('executors/200.js') !== -1
+                        ) {
+                          return true;
+                        }
+                      }
+                    } catch (e) {}
                     return false;
                   };
 
@@ -93,7 +139,7 @@ export default function RootLayout({
                     origWarn.apply(console, arguments);
                   };
 
-                  // 3. Theme initialization
+                  // 4. Theme initialization
                   var savedTheme = localStorage.getItem('theme');
                   var theme = savedTheme;
                   if (!theme) {

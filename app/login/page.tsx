@@ -56,7 +56,7 @@ function LoginForm() {
                                 Welcome back to your creator hub.
                             </h2>
                             <p className="text-sm text-white/80 font-medium leading-relaxed">
-                                Manage your tips, payouts, digital shop, and memberships in one central dashboard.
+                                Manage your tips, payouts, digital shop, and courses in one central dashboard.
                             </p>
                         </div>
                     </div>

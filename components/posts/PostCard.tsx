@@ -71,7 +71,7 @@ export default function PostCard({ post, creatorName }: PostCardProps) {
                         <div>
                             <h4 className="font-bold text-text-primary text-sm">Exclusive Content</h4>
                             <p className="text-xs text-text-muted mt-1">
-                                {post.excerpt || `Join ${creatorName}'s membership to unlock full post.`}
+                                {post.excerpt || `Support ${creatorName} to unlock the full post.`}
                             </p>
                         </div>
                     </div>

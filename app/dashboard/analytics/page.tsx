@@ -224,7 +224,9 @@ export default function CreatorAnalytics() {
                                 <div className="flex items-center space-x-4 text-[11px] text-text-muted border-l border-white/20 pl-4">
                                     <div>Tips: <span className="font-bold text-white">BDT {hoveredPoint.tips}</span></div>
                                     <div>Shop: <span className="font-bold text-white">BDT {hoveredPoint.shop}</span></div>
-                                    <div>Memberships: <span className="font-bold text-white">BDT {hoveredPoint.memberships}</span></div>
+                                    {hoveredPoint.memberships > 0 && (
+                                        <div>Memberships: <span className="font-bold text-white">BDT {hoveredPoint.memberships}</span></div>
+                                    )}
                                     <div>Views: <span className="font-bold text-white">{hoveredPoint.views}</span></div>
                                 </div>
                             </div>
@@ -323,19 +325,21 @@ export default function CreatorAnalytics() {
                         </div>
                     </div>
 
-                    {/* Memberships */}
-                    <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-semibold">
-                            <span className="flex items-center space-x-1.5 text-text-secondary">
-                                <Star className="h-4 w-4 text-primary" />
-                                <span>Tier Memberships</span>
-                            </span>
-                            <span className="text-text-primary font-bold">BDT {membershipAmount.toLocaleString()} ({membershipPct.toFixed(0)}%)</span>
+                    {/* Memberships (hidden while on hold unless past earnings exist) */}
+                    {membershipAmount > 0 && (
+                        <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-semibold">
+                                <span className="flex items-center space-x-1.5 text-text-secondary">
+                                    <Star className="h-4 w-4 text-primary" />
+                                    <span>Tier Memberships</span>
+                                </span>
+                                <span className="text-text-primary font-bold">BDT {membershipAmount.toLocaleString()} ({membershipPct.toFixed(0)}%)</span>
+                            </div>
+                            <div className="h-2.5 bg-background rounded-full overflow-hidden border border-border/50">
+                                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${membershipPct}%` }} />
+                            </div>
                         </div>
-                        <div className="h-2.5 bg-background rounded-full overflow-hidden border border-border/50">
-                            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${membershipPct}%` }} />
-                        </div>
-                    </div>
+                    )}
 
                     {/* Shop */}
                     <div className="space-y-1">

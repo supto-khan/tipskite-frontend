@@ -64,7 +64,7 @@ export default function Signup() {
                                 Launch your creator page in minutes.
                             </h2>
                             <p className="text-sm text-white/80 font-medium leading-relaxed">
-                                Join Bangladesh's premier platform to accept tips, sell digital products, and manage memberships effortlessly.
+                                Join Bangladesh's premier platform to accept tips, sell digital products, and host online courses effortlessly.
                             </p>
                         </div>
                     </div>

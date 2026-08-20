@@ -4,7 +4,7 @@ import { Footer } from "./components/layout/footer";
 import { Container } from "./components/layout/container";
 import { Button } from "./components/ui/button";
 import { Card } from "./components/ui/card";
-import { Coffee, Gift, ShoppingBag, Palette, FileText, BarChart3, Brush } from "lucide-react";
+import { Coffee, GraduationCap, ShoppingBag, Palette, FileText, BarChart3, Brush } from "lucide-react";
 
 const FEATURES = [
   {
@@ -14,10 +14,10 @@ const FEATURES = [
       "Let fans show love with a quick tip — no account needed. Powered by bKash, Nagad, Rocket & cards.",
   },
   {
-    icon: Gift,
-    title: "Memberships",
+    icon: GraduationCap,
+    title: "Online Courses",
     description:
-      "Offer monthly or yearly tiers with exclusive content, early access, and more for your top supporters.",
+      "Create, host, and sell video and text-based structured courses directly to your audience.",
   },
   {
     icon: ShoppingBag,
@@ -59,7 +59,7 @@ const STEPS = [
   {
     step: "3",
     title: "Receive support",
-    description: "Get tips and membership payments via bKash, Nagad, bank transfer, or cards. 5% platform fee.",
+    description: "Get tips and payments via bKash, Nagad, bank transfer, or cards. 5% platform fee.",
   },
 ];
 
@@ -92,7 +92,7 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-6 text-lg text-text-secondary md:text-xl">
-                Accept tips, sell memberships, and offer digital products — all from
+                Accept tips, sell digital products, courses, and offer services — all from
                 one beautiful page. Powered by bKash, Nagad, Rocket &amp; cards.
               </p>
 

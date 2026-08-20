@@ -8,7 +8,7 @@ import {
     User as UserIcon,
     Share2,
     Lock,
-    CreditCard,
+    GraduationCap,
     ShoppingBag,
     FileText,
     ArrowRight,
@@ -17,68 +17,64 @@ import {
     RotateCcw,
     Check,
     Copy,
-    DollarSign
+    DollarSign,
+    Brush,
+    Sparkles
 } from 'lucide-react'
+import CustomStorefrontRequestModal from '@/components/creator/CustomStorefrontRequestModal'
 
 export default function DashboardHome() {
     const router = useRouter()
     const [profile, setProfile] = useState<any>(null)
     const [summary, setSummary] = useState<any>(null)
-    const [tiersCount, setTiersCount] = useState(0)
     const [productsCount, setProductsCount] = useState(0)
     const [loading, setLoading] = useState(true)
     
+    const [profileLoading, setProfileLoading] = useState(true)
+    const [summaryLoading, setSummaryLoading] = useState(true)
+    const [productsLoading, setProductsLoading] = useState(true)
+
     // Goal state
     const [goalTitle, setGoalTitle] = useState('')
     const [goalAmount, setGoalAmount] = useState('')
     const [currentGoal, setCurrentGoal] = useState<any>(null)
     const [savingGoal, setSavingGoal] = useState(false)
     const [copied, setCopied] = useState(false)
+    const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [profileRes, summaryRes, tiersRes, productsRes] = await Promise.allSettled([
-                    axios.get('/api/v1/creator/profile'),
-                    axios.get('/api/v1/creator/analytics/summary'),
-                    axios.get('/api/v1/creator/tiers'),
-                    axios.get('/api/v1/creator/products')
-                ])
-
-                if (profileRes.status === 'fulfilled') {
-                    const profData = profileRes.value.data?.profile || profileRes.value.data
-                    setProfile(profData)
-                    if (profData?.goal_title && profData?.goal_target_cents) {
-                        setGoalTitle(profData.goal_title)
-                        setGoalAmount((profData.goal_target_cents / 100).toString())
-                    }
-                } else if (profileRes.reason?.response?.status === 404) {
+        // 1. Fetch Creator Profile first (immediate critical info)
+        axios.get('/api/v1/creator/profile')
+            .then((res) => {
+                const profData = res.data?.profile || res.data
+                setProfile(profData)
+                if (profData?.goal_title && profData?.goal_target_cents) {
+                    setGoalTitle(profData.goal_title)
+                    setGoalAmount((profData.goal_target_cents / 100).toString())
+                }
+            })
+            .catch((err) => {
+                if (err?.response?.status === 404) {
                     router.push('/onboarding')
-                    return
                 }
+            })
+            .finally(() => setProfileLoading(false))
 
-                if (summaryRes.status === 'fulfilled') {
-                    setSummary(summaryRes.value.data?.summary)
-                }
+        // 2. Fetch Summary & Earnings independently
+        axios.get('/api/v1/creator/analytics/summary')
+            .then((res) => setSummary(res.data?.summary))
+            .catch((err) => console.error('Summary error:', err))
+            .finally(() => setSummaryLoading(false))
 
-                if (tiersRes.status === 'fulfilled') {
-                    const tiers = tiersRes.value.data?.tiers || []
-                    setTiersCount(tiers.length)
-                }
-
-                if (productsRes.status === 'fulfilled') {
-                    const products = productsRes.value.data?.products || []
-                    setProductsCount(products.length)
-                }
-            } catch (e) {
-                console.error('Error loading dashboard:', e)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchData()
-    }, [])
+        // 3. Fetch Products independently
+        axios.get('/api/v1/creator/products')
+            .then((res) => {
+                const products = res.data?.products || []
+                setProductsCount(products.length)
+            })
+            .catch((err) => console.error('Products error:', err))
+            .finally(() => setProductsLoading(false))
+    }, [router])
 
     const handleSaveGoal = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -125,7 +121,7 @@ export default function DashboardHome() {
         setTimeout(() => setCopied(false), 2000)
     }
 
-    if (loading) {
+    if (profileLoading) {
         return (
             <div suppressHydrationWarning className="max-w-5xl mx-auto py-6 space-y-8 font-sans animate-pulse">
                 {/* Header Skeleton */}
@@ -193,6 +189,37 @@ export default function DashboardHome() {
                 </div>
             </div>
 
+            {/* Request Custom Design Banner (Below Creator Information) */}
+            <div className="bg-gradient-to-r from-primary-600/10 via-surface to-primary-500/5 border border-primary-500/30 rounded-3xl p-5 md:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary-600/10 border border-primary-500/20 flex items-center justify-center text-primary-600 shrink-0">
+                        <Brush className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                            <h3 className="text-base font-bold text-text-primary">Request Custom Storefront & Profile Design</h3>
+                            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-primary-500/15 text-primary-600 text-[10px] font-extrabold">
+                                <Sparkles className="w-3 h-3" />
+                                <span>Bespoke</span>
+                            </span>
+                        </div>
+                        <p className="text-xs text-text-muted leading-relaxed max-w-2xl">
+                            Need a tailor-made branded layout, custom hero banner, video reel showcase, or bespoke public profile blocks?
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setIsRequestModalOpen(true)}
+                    className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-xs rounded-full shadow-xs transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer hover:scale-102 active:scale-98"
+                >
+                    <Brush className="w-3.5 h-3.5" />
+                    <span>Request Custom Design</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+            </div>
+
             {/* Earnings & Goal Card */}
             <div className="bg-surface border border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -203,9 +230,15 @@ export default function DashboardHome() {
                                 LOCAL BDT
                             </span>
                         </div>
-                        <div className="text-4xl font-extrabold text-text-primary flex items-center space-x-1">
-                            <span>৳</span>
-                            <span>{totalEarnings}</span>
+                        <div className="text-4xl font-extrabold text-text-primary flex items-center space-x-1 min-h-[44px]">
+                            {summaryLoading ? (
+                                <div className="h-9 w-32 bg-border/40 rounded-xl animate-pulse" />
+                            ) : (
+                                <>
+                                    <span>৳</span>
+                                    <span>{totalEarnings}</span>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -279,27 +312,25 @@ export default function DashboardHome() {
                 <h3 className="text-xl font-bold text-text-primary">More ways to earn</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {/* Membership Card */}
+                    {/* Courses Card */}
                     <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-6">
                         <div className="space-y-4">
                             <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center text-primary-600">
-                                <CreditCard className="w-6 h-6" />
+                                <GraduationCap className="w-6 h-6" />
                             </div>
                             <div className="space-y-1">
-                                <h4 className="text-lg font-bold text-text-primary">Membership</h4>
+                                <h4 className="text-lg font-bold text-text-primary">Courses</h4>
                                 <p className="text-xs text-text-muted leading-relaxed">
-                                    {tiersCount > 0
-                                        ? `You have ${tiersCount} active membership tier${tiersCount === 1 ? '' : 's'} configured.`
-                                        : 'Create monthly membership tiers for your biggest fans and supporters.'}
+                                    Create and sell structured video and text courses to your students.
                                 </p>
                             </div>
                         </div>
 
                         <Link
-                            href="/dashboard/memberships"
+                            href="/dashboard/courses"
                             className="w-full py-3 px-4 bg-surface hover:bg-background border border-border text-text-primary rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 transition-all shadow-xs"
                         >
-                            <span>{tiersCount > 0 ? 'Manage Memberships' : 'Enable Memberships'}</span>
+                            <span>Manage Courses</span>
                             <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -313,9 +344,13 @@ export default function DashboardHome() {
                             <div className="space-y-1">
                                 <h4 className="text-lg font-bold text-text-primary">Shop</h4>
                                 <p className="text-xs text-text-muted leading-relaxed">
-                                    {productsCount > 0
-                                        ? `You have ${productsCount} item${productsCount === 1 ? '' : 's'} listed for sale in your shop.`
-                                        : 'Sell digital products, exclusive content, and more.'}
+                                    {productsLoading ? (
+                                        'Loading shop listings...'
+                                    ) : productsCount > 0 ? (
+                                        `You have ${productsCount} item${productsCount === 1 ? '' : 's'} listed for sale in your shop.`
+                                    ) : (
+                                        'Sell digital products, exclusive content, and more.'
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -360,6 +395,14 @@ export default function DashboardHome() {
                 <Link href="#" className="hover:text-text-primary transition-all">FAQ</Link>
                 <Link href="#" className="hover:text-text-primary transition-all">Contact</Link>
             </div>
+
+            {/* Custom Storefront Request Modal */}
+            <CustomStorefrontRequestModal
+                isOpen={isRequestModalOpen}
+                onClose={() => setIsRequestModalOpen(false)}
+                defaultBrandName={profile?.display_name || profile?.user?.display_name || ''}
+                defaultEmail={profile?.user?.email || ''}
+            />
         </div>
     )
 }

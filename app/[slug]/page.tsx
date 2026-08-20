@@ -160,11 +160,48 @@ export default async function PublicCreatorPage({ params }: { params: Promise<{ 
         ([key, val]) => typeof val === 'string' && val.trim().length > 0 && socialIconMap[key]
     )
 
+    const directionToCSS = (dir?: string) => {
+        switch (dir) {
+            case 'to-r': return 'to right'
+            case 'to-l': return 'to left'
+            case 'to-b': return 'to bottom'
+            case 'to-t': return 'to top'
+            case 'to-br': return 'to bottom right'
+            case 'to-tr': return 'to top right'
+            case 'to-bl': return 'to bottom left'
+            case 'to-tl': return 'to top left'
+            default: return 'to right'
+        }
+    }
+
+    const getHeaderBackgroundStyle = (): React.CSSProperties => {
+        const type = profile.header_bg_type || (profile.cover_image_url ? 'image' : 'gradient')
+
+        if (type === 'image' && profile.cover_image_url) {
+            return {}
+        }
+
+        if (type === 'color' && profile.header_color) {
+            return { backgroundColor: profile.header_color }
+        }
+
+        const from = profile.header_gradient_from || '#6366f1'
+        const to = profile.header_gradient_to || '#9333ea'
+        const dir = directionToCSS(profile.header_gradient_direction)
+        return {
+            background: `linear-gradient(${dir}, ${from}, ${to})`,
+        }
+    }
+
     return (
         <div suppressHydrationWarning className="min-h-screen flex flex-col justify-between bg-background font-sans">
-            {/* Cover Image Header */}
-            <div suppressHydrationWarning className="h-52 md:h-72 w-full bg-gradient-to-r from-primary-500 to-purple-600 relative">
-                {profile.cover_image_url && (
+            {/* Cover Image / Color / Gradient Header */}
+            <div
+                suppressHydrationWarning
+                style={getHeaderBackgroundStyle()}
+                className="h-52 md:h-72 w-full bg-gradient-to-r from-primary-500 to-purple-600 relative overflow-hidden"
+            >
+                {(profile.header_bg_type === 'image' || !profile.header_bg_type) && profile.cover_image_url && (
                     <img
                         src={profile.cover_image_url}
                         alt="Cover"

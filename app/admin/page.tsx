@@ -238,15 +238,15 @@ export default function ExecutiveDashboard() {
 
                     <div className="bg-surface rounded-2xl p-5 border border-border shadow-xs space-y-2">
                         <div className="flex items-center justify-between text-xs text-text-muted font-semibold">
-                            <span>Active Memberships</span>
+                            <span>Unique Supporters</span>
                             <div className="p-2 bg-violet-50 text-violet-600 rounded-xl">
-                                <Layers className="h-4 w-4" />
+                                <Heart className="h-4 w-4" />
                             </div>
                         </div>
                         <div className="text-2xl font-extrabold text-violet-600">
-                            {stats?.active_subscription_count || 0}
+                            {stats?.supporter_count || 0}
                         </div>
-                        <div className="text-[11px] text-text-muted">{stats?.supporter_count || 0} unique supporters</div>
+                        <div className="text-[11px] text-text-muted">Total distinct fan supporters</div>
                     </div>
                 </div>
 
@@ -374,21 +374,23 @@ export default function ExecutiveDashboard() {
                                 </div>
                             </div>
 
-                            {/* Memberships */}
-                            <div>
-                                <div className="flex justify-between text-xs font-semibold mb-1">
-                                    <span className="flex items-center space-x-1.5 text-text-secondary">
-                                        <Layers className="h-3.5 w-3.5 text-violet-500" />
-                                        <span>Memberships</span>
-                                    </span>
-                                    <span className="font-mono text-text-primary">
-                                        BDT {(revenueByType.membership / 100).toFixed(0)} ({Math.round((revenueByType.membership / totalRevCents) * 100)}%)
-                                    </span>
+                            {/* Memberships (hidden while on hold unless past revenue exists) */}
+                            {revenueByType.membership > 0 && (
+                                <div>
+                                    <div className="flex justify-between text-xs font-semibold mb-1">
+                                        <span className="flex items-center space-x-1.5 text-text-secondary">
+                                            <Layers className="h-3.5 w-3.5 text-violet-500" />
+                                            <span>Memberships</span>
+                                        </span>
+                                        <span className="font-mono text-text-primary">
+                                            BDT {(revenueByType.membership / 100).toFixed(0)} ({Math.round((revenueByType.membership / totalRevCents) * 100)}%)
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-background h-2 rounded-full overflow-hidden">
+                                        <div className="bg-violet-500 h-full rounded-full" style={{ width: `${(revenueByType.membership / totalRevCents) * 100}%` }} />
+                                    </div>
                                 </div>
-                                <div className="w-full bg-background h-2 rounded-full overflow-hidden">
-                                    <div className="bg-violet-500 h-full rounded-full" style={{ width: `${(revenueByType.membership / totalRevCents) * 100}%` }} />
-                                </div>
-                            </div>
+                            )}
 
                             {/* Shop Products */}
                             <div>

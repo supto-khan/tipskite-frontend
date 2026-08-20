@@ -192,7 +192,6 @@ export default function CreatorManagementPage() {
                                                 <td className="py-3">
                                                     <div className="flex items-center space-x-1">
                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${c.accepts_tips ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>Tips</span>
-                                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${c.memberships_enabled ? 'bg-violet-50 text-violet-700' : 'bg-gray-100 text-gray-400'}`}>Members</span>
                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${c.shop_enabled ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>Shop</span>
                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${c.services_enabled ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-400'}`}>Services</span>
                                                     </div>

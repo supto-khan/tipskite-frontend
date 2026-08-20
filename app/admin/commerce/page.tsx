@@ -166,7 +166,7 @@ export default function CommerceSuitePage() {
             <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full">
                 <AdminHeader
                     title="Commerce Suite & Approvals"
-                    subtitle="Review and moderate creator digital downloads, membership tiers, 1-on-1 services, and courses."
+                    subtitle="Review and moderate creator digital downloads, 1-on-1 services, and courses."
                 />
 
                 {/* Sub-navigation Tabs */}
@@ -199,16 +199,6 @@ export default function CommerceSuitePage() {
                     >
                         <BookOpen className="h-4 w-4" />
                         <span>Courses</span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('tiers')}
-                        className={`pb-3 text-xs font-extrabold transition-all border-b-2 px-3 flex items-center space-x-2 ${
-                            activeTab === 'tiers' ? 'border-primary-600 text-primary-600' : 'border-transparent text-text-muted hover:text-text-primary'
-                        }`}
-                    >
-                        <Layers className="h-4 w-4" />
-                        <span>Membership Tiers</span>
                     </button>
                 </div>
 
