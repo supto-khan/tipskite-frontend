@@ -84,7 +84,7 @@ export default function KycReviewQueuePage() {
         <div className="min-h-screen bg-background flex font-sans">
             <AdminSidebar />
 
-            <main className="flex-1 p-8 space-y-8 overflow-y-auto max-w-7xl">
+            <main className="flex-1 p-8 space-y-8 overflow-y-auto w-full">
                 <AdminHeader
                     title="KYC & Payout Verification Queue"
                     subtitle="Review submitted Mobile Financial Services (bKash/Nagad/Rocket) and Bank Account credentials to grant payout clearance."

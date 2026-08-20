@@ -86,7 +86,7 @@ export default function FraudAndRiskSignalsPage() {
         <div className="flex min-h-screen bg-background text-text-primary font-sans">
             <AdminSidebar />
 
-            <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full max-w-7xl">
+            <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full">
                 <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 gap-4 border-b border-border mb-6">
                     <div>
                         <h1 className="text-xl md:text-2xl font-black text-text-primary">Fraud & Risk Signals Intelligence</h1>

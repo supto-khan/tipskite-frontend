@@ -104,7 +104,7 @@ export default function CreatorManagementPage() {
         <div className="flex min-h-screen bg-background text-text-primary font-sans">
             <AdminSidebar />
 
-            <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full max-w-7xl">
+            <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full">
                 <AdminHeader
                     title="Creator Management"
                     subtitle="Manage creator profiles, features, module visibility, and platform accounts."
